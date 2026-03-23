@@ -1,0 +1,62 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# FastAPI / Uvicorn
+*.log
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Node / Expo
+node_modules/
+.expo/
+dist/
+build/
+*.tgz
+
+# iOS
+ios/Pods/
+ios/build/
+*.xcworkspace
+
+# Android
+android/build/
+android/.gradle/
+
+# Database
+*.db
+*.sqlite3
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Docker
+docker-volumes/
+
+# Uploads (local dev)
+uploads/
+media/
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
