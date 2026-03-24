@@ -27,13 +27,18 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.medcare.aiassistant",
+      "versionCode": 1,
+      "targetSdkVersion": 36,
+      "compileSdkVersion": 36,
       "permissions": [
         "CAMERA",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
+        "READ_MEDIA_IMAGES",
+        "READ_MEDIA_VIDEO",
         "RECORD_AUDIO",
         "RECEIVE_BOOT_COMPLETED",
-        "VIBRATE"
+        "VIBRATE",
+        "POST_NOTIFICATIONS",
+        "FOREGROUND_SERVICE"
       ]
     },
     "web": {
