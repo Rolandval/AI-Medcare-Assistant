@@ -1,5 +1,6 @@
 """User schemas"""
 
+import uuid
 from datetime import date
 from typing import Optional
 from pydantic import BaseModel
@@ -34,7 +35,7 @@ class HealthProfileUpdate(BaseModel):
 
 
 class UserResponse(BaseModel):
-    id: str
+    id: uuid.UUID
     name: str
     email: Optional[str] = None
     birth_date: Optional[date] = None
@@ -43,7 +44,7 @@ class UserResponse(BaseModel):
     lifestyle: Optional[str] = None
     location_city: Optional[str] = None
     avatar_url: Optional[str] = None
-    family_id: Optional[str] = None
+    family_id: Optional[uuid.UUID] = None
     is_family_admin: bool = False
     morning_survey_hour: Optional[int] = None
     morning_survey_minute: Optional[int] = None

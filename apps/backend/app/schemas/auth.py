@@ -1,6 +1,8 @@
 """Auth schemas"""
 
 import uuid
+from datetime import date
+from typing import Optional
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -33,10 +35,10 @@ class UserMeResponse(BaseModel):
     family_id: uuid.UUID | None = None
     is_family_admin: bool = False
     avatar_url: str | None = None
-    birth_date: str | None = None
-    gender: str | None = None
-    occupation: str | None = None
-    lifestyle: str | None = None
-    location_city: str | None = None
+    birth_date: Optional[date] = None
+    gender: Optional[str] = None
+    occupation: Optional[str] = None
+    lifestyle: Optional[str] = None
+    location_city: Optional[str] = None
 
     model_config = {"from_attributes": True}
