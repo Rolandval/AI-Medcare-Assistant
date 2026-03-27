@@ -52,6 +52,14 @@
           "icon": "./assets/notification-icon.png",
           "color": "#3b82f6"
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
+        }
       ]
     ],
     "scheme": "aimedcare",
