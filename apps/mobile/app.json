@@ -37,8 +37,7 @@
         "RECORD_AUDIO",
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
-        "POST_NOTIFICATIONS",
-        "FOREGROUND_SERVICE"
+        "POST_NOTIFICATIONS"
       ]
     },
     "web": {
