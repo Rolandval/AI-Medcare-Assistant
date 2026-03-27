@@ -30,8 +30,6 @@
       },
       "package": "com.medcare.aiassistant",
       "versionCode": 1,
-      "targetSdkVersion": 36,
-      "compileSdkVersion": 36,
       "permissions": [
         "CAMERA",
         "READ_MEDIA_IMAGES",
