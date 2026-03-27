@@ -1,6 +1,7 @@
 import { ScrollView, View, Text, TouchableOpacity, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import { api } from "@/services/api";
 import { useAuthStore } from "@/store/authStore";
 
@@ -68,6 +69,7 @@ function RecommendationCard({ rec }: { rec: any }) {
 
 export default function Dashboard() {
   const { user } = useAuthStore();
+  const router = useRouter();
 
   const { data: metrics, refetch: refetchMetrics, isRefetching } = useQuery({
     queryKey: ["metrics-latest"],
@@ -117,7 +119,15 @@ export default function Dashboard() {
         <HealthStatusCard score={healthScore} />
 
         {/* Key Metrics */}
-        <Text className="text-lg font-bold text-gray-900 mb-3">Показники</Text>
+        <View className="flex-row items-center justify-between mb-3">
+          <Text className="text-lg font-bold text-gray-900">Показники</Text>
+          <TouchableOpacity
+            className="bg-green-500 rounded-xl px-3 py-1.5"
+            onPress={() => router.push("/(tabs)/dashboard/add-metric")}
+          >
+            <Text className="text-white font-semibold text-sm">+ Додати</Text>
+          </TouchableOpacity>
+        </View>
         <View className="flex-row gap-3 mb-3">
           <MetricCard
             icon="🫀"

@@ -14,6 +14,11 @@ interface User {
   family_id: string | null;
   is_family_admin: boolean;
   avatar_url: string | null;
+  birth_date: string | null;
+  gender: string | null;
+  occupation: string | null;
+  lifestyle: string | null;
+  location_city: string | null;
 }
 
 interface AuthState {

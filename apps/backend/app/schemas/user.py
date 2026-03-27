@@ -36,14 +36,19 @@ class HealthProfileUpdate(BaseModel):
 class UserResponse(BaseModel):
     id: str
     name: str
-    email: Optional[str]
-    birth_date: Optional[date]
-    gender: Optional[str]
-    occupation: Optional[str]
-    lifestyle: Optional[str]
-    location_city: Optional[str]
-    avatar_url: Optional[str]
-    family_id: Optional[str]
-    is_family_admin: bool
+    email: Optional[str] = None
+    birth_date: Optional[date] = None
+    gender: Optional[str] = None
+    occupation: Optional[str] = None
+    lifestyle: Optional[str] = None
+    location_city: Optional[str] = None
+    avatar_url: Optional[str] = None
+    family_id: Optional[str] = None
+    is_family_admin: bool = False
+    morning_survey_hour: Optional[int] = None
+    morning_survey_minute: Optional[int] = None
+    evening_survey_hour: Optional[int] = None
+    evening_survey_minute: Optional[int] = None
+    notifications_enabled: Optional[bool] = None
 
     model_config = {"from_attributes": True}

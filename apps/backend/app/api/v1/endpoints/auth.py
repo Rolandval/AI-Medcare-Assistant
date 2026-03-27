@@ -1,7 +1,10 @@
 """Auth endpoints — register, login, refresh"""
 
-from fastapi import APIRouter, HTTPException, status
+import logging
+from fastapi import APIRouter, HTTPException, Request, status
 from sqlalchemy import select
+
+logger = logging.getLogger(__name__)
 
 from app.api.deps import DB, CurrentUser
 from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
@@ -40,7 +43,8 @@ async def register(body: RegisterRequest, db: DB):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(body: LoginRequest, db: DB):
+async def login(body: LoginRequest, db: DB, request: Request):
+    logger.warning(f"LOGIN ATTEMPT from {request.client.host}: email={body.email}")
     result = await db.execute(select(User).where(User.email == body.email, User.is_active == True))
     user = result.scalar_one_or_none()
 

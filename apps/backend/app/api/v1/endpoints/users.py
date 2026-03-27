@@ -32,7 +32,11 @@ async def get_health_profile(current_user: CurrentUser, db: DB):
     )
     profile = result.scalar_one_or_none()
     if not profile:
-        raise HTTPException(status_code=404, detail="Health profile not found")
+        # Auto-create empty health profile for new users
+        profile = HealthProfile(user_id=current_user.id)
+        db.add(profile)
+        await db.commit()
+        await db.refresh(profile)
     return profile
 
 
