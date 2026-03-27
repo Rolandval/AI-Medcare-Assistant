@@ -7,7 +7,7 @@
 ## Крок 1 — Docker (PostgreSQL + Redis)
 
 ```powershell
-cd D:\Projects\AI-Medcare-Assistant
+cd C:\Users\Valer4uk\Projects\AI-Medcare-Assistant
 docker-compose up -d postgres redis
 ```
 
@@ -23,7 +23,7 @@ docker ps
 ## Крок 2 — Скопіювати .env
 
 ```powershell
-cd D:\Projects\AI-Medcare-Assistant
+cd C:\Users\Valer4uk\Projects\AI-Medcare-Assistant
 copy .env.example .env
 ```
 
@@ -41,7 +41,7 @@ JWT_SECRET_KEY=будь-який-рядок-мінімум-32-символи
 ## Крок 3 — Backend (по одній команді в PowerShell)
 
 ```powershell
-cd D:\Projects\AI-Medcare-Assistant\apps\backend
+cd C:\Users\Valer4uk\Projects\AI-Medcare-Assistant\apps\backend
 ```
 
 ```powershell
@@ -76,7 +76,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ## Крок 4 — Telegram Bot (новий термінал)
 
 ```powershell
-cd D:\Projects\AI-Medcare-Assistant\apps\backend
+cd C:\Users\Valer4uk\Projects\AI-Medcare-Assistant\apps\backend
 .\venv\Scripts\Activate.ps1
 python -m app.telegram.polling
 ```
@@ -86,7 +86,7 @@ python -m app.telegram.polling
 ## Крок 5 — Mobile (новий термінал)
 
 ```powershell
-cd D:\Projects\AI-Medcare-Assistant\apps\mobile
+cd C:\Users\Valer4uk\Projects\AI-Medcare-Assistant\apps\mobile
 npm install
 ```
 
@@ -109,7 +109,7 @@ EXPO_PUBLIC_API_URL=http://192.168.X.X:8000/api/v1
 ## Крок 6 — Git (один раз)
 
 ```powershell
-cd D:\Projects\AI-Medcare-Assistant
+cd C:\Users\Valer4uk\Projects\AI-Medcare-Assistant
 git init
 git add .
 git commit -m "Initial commit: AI-Medcare-Assistant MVP"
@@ -122,7 +122,7 @@ git commit -m "Initial commit: AI-Medcare-Assistant MVP"
 Потрібен для автоматичного аналізу. Запускати після backend:
 
 ```powershell
-cd D:\Projects\AI-Medcare-Assistant\apps\backend
+cd C:\Users\Valer4uk\Projects\AI-Medcare-Assistant\apps\backend
 .\venv\Scripts\Activate.ps1
 celery -A app.celery_app worker --loglevel=info -Q default,ai_tasks
 ```

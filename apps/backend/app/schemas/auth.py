@@ -1,5 +1,6 @@
 """Auth schemas"""
 
+import uuid
 from pydantic import BaseModel, EmailStr, Field
 
 
@@ -25,12 +26,12 @@ class RefreshRequest(BaseModel):
 
 
 class UserMeResponse(BaseModel):
-    id: str
+    id: uuid.UUID
     name: str
-    email: str | None
-    telegram_id: int | None
-    family_id: str | None
+    email: str | None = None
+    telegram_id: int | None = None
+    family_id: uuid.UUID | None = None
     is_family_admin: bool
-    avatar_url: str | None
+    avatar_url: str | None = None
 
     model_config = {"from_attributes": True}

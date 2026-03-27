@@ -11,7 +11,9 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.medcare.aiassistant",
@@ -58,6 +60,15 @@
     "scheme": "aimedcare",
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "e6cabd3a-6bae-4287-9163-85575e47f15e"
+      }
+    },
+    "owner": "rolandval"
   }
 }
