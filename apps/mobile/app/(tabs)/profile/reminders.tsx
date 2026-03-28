@@ -5,6 +5,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useRouter } from "expo-router";
+import { LinearGradient } from "expo-linear-gradient";
 import { api } from "@/services/api";
 
 const DAYS = [
@@ -23,7 +24,7 @@ const TIME_PRESETS = [
   { label: "Ранок", times: ["08:00"] },
   { label: "2 рази", times: ["08:00", "20:00"] },
   { label: "3 рази", times: ["08:00", "14:00", "20:00"] },
-  { label: "Свій час", times: [] },
+  { label: "Свій", times: [] },
 ];
 
 function ReminderCard({
@@ -43,46 +44,52 @@ function ReminderCard({
   const times = (reminder.times || []).join(", ");
 
   return (
-    <View className={`bg-white rounded-2xl p-4 mb-3 border ${
-      reminder.is_active ? "border-gray-100" : "border-gray-200 opacity-60"
-    }`}>
-      <View className="flex-row items-center justify-between mb-2">
-        <View className="flex-row items-center gap-2 flex-1">
-          <Text className="text-2xl">{reminder.emoji || "💊"}</Text>
+    <View
+      className={`bg-white rounded-2xl p-4 mb-3 ${reminder.is_active ? "" : "opacity-50"}`}
+      style={{ elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4 }}
+    >
+      {/* Header row */}
+      <View className="flex-row items-center justify-between mb-3">
+        <View className="flex-row items-center gap-3 flex-1">
+          <View className="w-11 h-11 rounded-2xl bg-rose-50 items-center justify-center">
+            <Text className="text-xl">{reminder.emoji || "💊"}</Text>
+          </View>
           <View className="flex-1">
-            <Text className="text-base font-semibold text-gray-900">{reminder.name}</Text>
+            <Text className="text-base font-bold text-gray-900">{reminder.name}</Text>
             {reminder.dosage && (
-              <Text className="text-sm text-gray-500">{reminder.dosage}</Text>
+              <Text className="text-xs text-gray-400 mt-0.5">{reminder.dosage}</Text>
             )}
           </View>
         </View>
         <Switch
           value={reminder.is_active}
           onValueChange={(val) => onToggle(reminder.id, val)}
-          trackColor={{ false: "#d1d5db", true: "#93c5fd" }}
+          trackColor={{ false: "#e5e7eb", true: "#bfdbfe" }}
           thumbColor={reminder.is_active ? "#3b82f6" : "#9ca3af"}
         />
       </View>
 
-      <View className="flex-row items-center gap-4">
-        <View className="flex-row items-center gap-1">
-          <Text className="text-sm text-gray-400">⏰</Text>
-          <Text className="text-sm text-blue-600 font-medium">{times || "—"}</Text>
+      {/* Schedule info */}
+      <View className="flex-row items-center gap-4 mb-2">
+        <View className="flex-row items-center gap-1.5 bg-blue-50 rounded-lg px-2.5 py-1">
+          <Text className="text-xs text-blue-400">⏰</Text>
+          <Text className="text-xs text-blue-600 font-semibold">{times || "—"}</Text>
         </View>
-        <View className="flex-row items-center gap-1">
-          <Text className="text-sm text-gray-400">📅</Text>
-          <Text className="text-sm text-gray-600">
+        <View className="flex-row items-center gap-1.5 bg-gray-50 rounded-lg px-2.5 py-1">
+          <Text className="text-xs text-gray-400">📅</Text>
+          <Text className="text-xs text-gray-600 font-medium">
             {(reminder.days_of_week || []).length === 7 ? "Щодня" : dayLabels}
           </Text>
         </View>
       </View>
 
       {reminder.instructions && (
-        <Text className="text-sm text-gray-500 mt-2 italic">{reminder.instructions}</Text>
+        <Text className="text-xs text-gray-400 italic mt-1">{reminder.instructions}</Text>
       )}
 
+      {/* Delete */}
       <TouchableOpacity
-        className="mt-3 py-1"
+        className="mt-3 pt-2.5 border-t border-gray-50"
         onPress={() =>
           Alert.alert("Видалити?", `${reminder.name} — буде видалено`, [
             { text: "Скасувати" },
@@ -90,7 +97,7 @@ function ReminderCard({
           ])
         }
       >
-        <Text className="text-red-400 text-sm text-center">Видалити</Text>
+        <Text className="text-red-300 text-xs text-center font-medium">Видалити</Text>
       </TouchableOpacity>
     </View>
   );
@@ -111,7 +118,7 @@ function AddReminderForm({ onClose }: { onClose: () => void }) {
     mutationFn: (data: any) => api.post("/notifications/reminders", data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["reminders"] });
-      Alert.alert("✅", "Нагадування створено!");
+      Alert.alert("Готово", "Нагадування створено!");
       onClose();
     },
     onError: () => Alert.alert("Помилка", "Не вдалось створити нагадування"),
@@ -156,7 +163,10 @@ function AddReminderForm({ onClose }: { onClose: () => void }) {
   };
 
   return (
-    <View className="bg-white rounded-3xl p-5 mb-4 border border-blue-200">
+    <View
+      className="bg-white rounded-3xl p-5 mb-4"
+      style={{ elevation: 4, shadowColor: "#3b82f6", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 12 }}
+    >
       <Text className="text-lg font-bold text-gray-900 mb-4">Нове нагадування</Text>
 
       {/* Emoji picker */}
@@ -164,8 +174,8 @@ function AddReminderForm({ onClose }: { onClose: () => void }) {
         {EMOJIS.map((e) => (
           <TouchableOpacity
             key={e}
-            className={`w-10 h-10 rounded-full items-center justify-center ${
-              emoji === e ? "bg-blue-100 border-2 border-blue-500" : "bg-gray-50"
+            className={`w-10 h-10 rounded-xl items-center justify-center ${
+              emoji === e ? "bg-blue-100 border-2 border-blue-400" : "bg-gray-50"
             }`}
             onPress={() => setEmoji(e)}
           >
@@ -184,25 +194,25 @@ function AddReminderForm({ onClose }: { onClose: () => void }) {
 
       {/* Dosage */}
       <TextInput
-        className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base mb-3"
+        className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base mb-4"
         value={dosage}
         onChangeText={setDosage}
         placeholder="Дозування (напр. 1 таблетка 500мг)"
       />
 
       {/* Time presets */}
-      <Text className="text-sm font-medium text-gray-600 mb-2">⏰ Коли приймати</Text>
+      <Text className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Коли приймати</Text>
       <View className="flex-row gap-2 mb-3">
         {TIME_PRESETS.map((preset, i) => (
           <TouchableOpacity
             key={i}
-            className={`flex-1 rounded-xl py-2.5 items-center border-2 ${
-              timePreset === i ? "bg-blue-50 border-blue-500" : "bg-white border-gray-200"
+            className={`flex-1 rounded-xl py-2.5 items-center ${
+              timePreset === i ? "bg-blue-500" : "bg-gray-50 border border-gray-200"
             }`}
             onPress={() => setTimePreset(i)}
           >
             <Text className={`text-xs font-semibold ${
-              timePreset === i ? "text-blue-600" : "text-gray-600"
+              timePreset === i ? "text-white" : "text-gray-600"
             }`}>
               {preset.label}
             </Text>
@@ -218,12 +228,12 @@ function AddReminderForm({ onClose }: { onClose: () => void }) {
               className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-base"
               value={customTime}
               onChangeText={setCustomTime}
-              placeholder="HH:MM (напр. 08:00)"
+              placeholder="HH:MM"
               keyboardType="numbers-and-punctuation"
               maxLength={5}
             />
             <TouchableOpacity
-              className="bg-blue-500 rounded-xl px-4 items-center justify-center"
+              className="bg-blue-500 rounded-xl px-5 items-center justify-center"
               onPress={addCustomTime}
             >
               <Text className="text-white font-bold text-lg">+</Text>
@@ -234,10 +244,10 @@ function AddReminderForm({ onClose }: { onClose: () => void }) {
               {customTimes.map((t) => (
                 <TouchableOpacity
                   key={t}
-                  className="bg-blue-50 border border-blue-200 rounded-full px-3 py-1.5 flex-row items-center"
+                  className="bg-blue-50 border border-blue-200 rounded-full px-3 py-1.5"
                   onPress={() => setCustomTimes((prev) => prev.filter((x) => x !== t))}
                 >
-                  <Text className="text-blue-700 text-sm">{t} ✕</Text>
+                  <Text className="text-blue-700 text-sm font-medium">{t} x</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -246,20 +256,20 @@ function AddReminderForm({ onClose }: { onClose: () => void }) {
       )}
 
       {/* Days of week */}
-      <Text className="text-sm font-medium text-gray-600 mb-2">📅 Дні тижня</Text>
-      <View className="flex-row gap-1.5 mb-3">
+      <Text className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Дні тижня</Text>
+      <View className="flex-row gap-1.5 mb-4">
         {DAYS.map((day) => (
           <TouchableOpacity
             key={day.key}
-            className={`flex-1 rounded-lg py-2 items-center border ${
+            className={`flex-1 rounded-xl py-2.5 items-center ${
               selectedDays.includes(day.key)
-                ? "bg-blue-500 border-blue-500"
-                : "bg-white border-gray-200"
+                ? "bg-blue-500"
+                : "bg-gray-50 border border-gray-200"
             }`}
             onPress={() => toggleDay(day.key)}
           >
             <Text className={`text-xs font-semibold ${
-              selectedDays.includes(day.key) ? "text-white" : "text-gray-600"
+              selectedDays.includes(day.key) ? "text-white" : "text-gray-500"
             }`}>
               {day.label}
             </Text>
@@ -278,21 +288,29 @@ function AddReminderForm({ onClose }: { onClose: () => void }) {
       {/* Actions */}
       <View className="flex-row gap-3">
         <TouchableOpacity
-          className="flex-1 border border-gray-300 rounded-xl py-3 items-center"
+          className="flex-1 border border-gray-200 rounded-xl py-3 items-center"
           onPress={onClose}
         >
           <Text className="text-gray-500 font-semibold">Скасувати</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          className="flex-1 bg-blue-500 rounded-xl py-3 items-center"
+          className="flex-1"
           onPress={handleSave}
           disabled={createMutation.isPending}
+          activeOpacity={0.8}
         >
-          {createMutation.isPending ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text className="text-white font-semibold">Зберегти</Text>
-          )}
+          <LinearGradient
+            colors={["#3b82f6", "#2563eb"]}
+            className="rounded-xl py-3 items-center"
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+          >
+            {createMutation.isPending ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text className="text-white font-bold">Зберегти</Text>
+            )}
+          </LinearGradient>
         </TouchableOpacity>
       </View>
     </View>
@@ -322,7 +340,7 @@ export default function Reminders() {
 
   const testPushMutation = useMutation({
     mutationFn: () => api.post("/notifications/test-push"),
-    onSuccess: () => Alert.alert("✅", "Тестове сповіщення відправлено!"),
+    onSuccess: () => Alert.alert("Готово", "Тестове сповіщення відправлено!"),
     onError: () => Alert.alert("Помилка", "Не вдалось відправити. Перевір дозволи на сповіщення."),
   });
 
@@ -331,12 +349,15 @@ export default function Reminders() {
       <ScrollView className="flex-1" contentContainerStyle={{ padding: 16 }}>
         {/* Header */}
         <View className="flex-row items-center justify-between mb-6">
-          <TouchableOpacity onPress={() => router.back()}>
-            <Text className="text-blue-500 text-base">← Назад</Text>
+          <TouchableOpacity onPress={() => router.back()} className="py-1">
+            <Text className="text-blue-500 text-base font-medium">← Назад</Text>
           </TouchableOpacity>
           <Text className="text-xl font-bold text-gray-900">Нагадування</Text>
-          <TouchableOpacity onPress={() => testPushMutation.mutate()}>
-            <Text className="text-blue-500 text-sm">🔔 Тест</Text>
+          <TouchableOpacity
+            onPress={() => testPushMutation.mutate()}
+            className="bg-amber-50 rounded-xl px-3 py-1.5"
+          >
+            <Text className="text-amber-600 text-xs font-semibold">Тест</Text>
           </TouchableOpacity>
         </View>
 
@@ -345,10 +366,19 @@ export default function Reminders() {
           <AddReminderForm onClose={() => setShowForm(false)} />
         ) : (
           <TouchableOpacity
-            className="bg-blue-500 rounded-2xl py-4 items-center mb-4"
+            className="mb-4"
             onPress={() => setShowForm(true)}
+            activeOpacity={0.8}
           >
-            <Text className="text-white font-bold text-base">+ Додати нагадування</Text>
+            <LinearGradient
+              colors={["#3b82f6", "#2563eb"]}
+              className="rounded-2xl py-4 items-center flex-row justify-center gap-2"
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+            >
+              <Text className="text-white font-bold text-lg">+</Text>
+              <Text className="text-white font-bold text-base">Додати нагадування</Text>
+            </LinearGradient>
           </TouchableOpacity>
         )}
 
@@ -356,10 +386,12 @@ export default function Reminders() {
         {isLoading && <ActivityIndicator size="large" color="#3b82f6" className="mt-8" />}
 
         {reminders?.length === 0 && !isLoading && (
-          <View className="items-center py-12">
-            <Text className="text-5xl mb-4">💊</Text>
-            <Text className="text-lg font-semibold text-gray-700 mb-2">Немає нагадувань</Text>
-            <Text className="text-sm text-gray-500 text-center px-8">
+          <View className="items-center py-16">
+            <View className="w-20 h-20 rounded-full bg-rose-50 items-center justify-center mb-4">
+              <Text className="text-4xl">💊</Text>
+            </View>
+            <Text className="text-lg font-semibold text-gray-700 mb-1">Немає нагадувань</Text>
+            <Text className="text-sm text-gray-400 text-center px-8">
               Додай ліки та додаток нагадуватиме тобі про прийом у потрібний час
             </Text>
           </View>

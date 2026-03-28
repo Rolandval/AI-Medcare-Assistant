@@ -3,11 +3,18 @@ import { Text, View } from "react-native";
 
 function TabIcon({ emoji, label, focused }: { emoji: string; label: string; focused: boolean }) {
   return (
-    <View className="items-center pt-1">
-      <Text className="text-2xl">{emoji}</Text>
-      <Text className={`text-xs mt-0.5 ${focused ? "text-blue-500 font-semibold" : "text-gray-400"}`}>
+    <View className="items-center pt-2 w-16">
+      <View className={`w-11 h-11 rounded-2xl items-center justify-center mb-0.5 ${
+        focused ? "bg-blue-50" : "bg-transparent"
+      }`}>
+        <Text className={focused ? "text-2xl" : "text-xl opacity-50"}>{emoji}</Text>
+      </View>
+      <Text className={`text-xs ${focused ? "text-blue-600 font-bold" : "text-gray-400"}`}>
         {label}
       </Text>
+      {focused && (
+        <View className="w-5 h-1 rounded-full bg-blue-500 mt-1" />
+      )}
     </View>
   );
 }
@@ -18,11 +25,16 @@ export default function TabsLayout() {
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          height: 80,
-          paddingBottom: 10,
-          backgroundColor: "#fff",
-          borderTopWidth: 1,
-          borderTopColor: "#e5e7eb",
+          height: 88,
+          paddingBottom: 8,
+          paddingTop: 4,
+          backgroundColor: "#ffffff",
+          borderTopWidth: 0,
+          elevation: 20,
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: -4 },
+          shadowOpacity: 0.06,
+          shadowRadius: 12,
         },
         tabBarShowLabel: false,
       }}

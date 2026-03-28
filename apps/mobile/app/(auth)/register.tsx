@@ -2,6 +2,7 @@ import { useState } from "react";
 import { View, Text, TextInput, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { useAuthStore } from "@/store/authStore";
 
 export default function Register() {
@@ -32,70 +33,83 @@ export default function Register() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
-        <ScrollView className="flex-1 px-8 pt-8">
-          <TouchableOpacity onPress={() => router.back()} className="mb-8">
-            <Text className="text-blue-500 text-lg">← Назад</Text>
-          </TouchableOpacity>
+    <LinearGradient colors={["#f0fdf4", "#ffffff"]} className="flex-1">
+      <SafeAreaView className="flex-1">
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} className="flex-1">
+          <ScrollView className="flex-1 px-6 pt-6">
+            <TouchableOpacity onPress={() => router.back()} className="mb-8 py-1">
+              <Text className="text-blue-500 text-base font-medium">← Назад</Text>
+            </TouchableOpacity>
 
-          <Text className="text-3xl font-bold text-gray-900 mb-2">Реєстрація</Text>
-          <Text className="text-base text-gray-500 mb-10">Створи свій акаунт</Text>
-
-          <View className="gap-4 mb-8">
-            <View>
-              <Text className="text-base font-medium text-gray-700 mb-2">Твоє ім'я</Text>
-              <TextInput
-                className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base"
-                placeholder="Ім'я Прізвище"
-                value={name}
-                onChangeText={setName}
-                autoCapitalize="words"
-              />
+            <View className="w-16 h-16 rounded-2xl bg-emerald-50 items-center justify-center mb-6">
+              <Text className="text-3xl">✨</Text>
             </View>
 
-            <View>
-              <Text className="text-base font-medium text-gray-700 mb-2">Email</Text>
-              <TextInput
-                className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base"
-                placeholder="your@email.com"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
+            <Text className="text-3xl font-bold text-gray-900 mb-1">Реєстрація</Text>
+            <Text className="text-sm text-gray-400 mb-8">Створи свій акаунт</Text>
+
+            <View className="gap-4 mb-8">
+              <View>
+                <Text className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Твоє ім'я</Text>
+                <TextInput
+                  className="bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-base"
+                  placeholder="Ім'я Прізвище"
+                  value={name}
+                  onChangeText={setName}
+                  autoCapitalize="words"
+                />
+              </View>
+
+              <View>
+                <Text className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Email</Text>
+                <TextInput
+                  className="bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-base"
+                  placeholder="your@email.com"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
+
+              <View>
+                <Text className="text-xs font-semibold text-gray-400 mb-2 uppercase tracking-wide">Пароль</Text>
+                <TextInput
+                  className="bg-white border border-gray-200 rounded-xl px-4 py-3.5 text-base"
+                  placeholder="Мінімум 8 символів"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                />
+              </View>
             </View>
 
-            <View>
-              <Text className="text-base font-medium text-gray-700 mb-2">Пароль</Text>
-              <TextInput
-                className="border-2 border-gray-200 rounded-xl px-4 py-4 text-base"
-                placeholder="Мінімум 8 символів"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
-            </View>
-          </View>
+            <TouchableOpacity
+              onPress={handleRegister}
+              disabled={loading}
+              activeOpacity={0.85}
+            >
+              <LinearGradient
+                colors={loading ? ["#86efac", "#86efac"] : ["#10b981", "#059669"]}
+                className="rounded-2xl py-4 items-center mb-6"
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                <Text className="text-white text-lg font-bold">
+                  {loading ? "Реєструємось..." : "Створити акаунт"}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            className={`w-full rounded-2xl py-4 items-center mb-6 ${loading ? "bg-blue-300" : "bg-blue-500"}`}
-            onPress={handleRegister}
-            disabled={loading}
-          >
-            <Text className="text-white text-lg font-semibold">
-              {loading ? "Реєструємось..." : "Створити акаунт"}
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity className="mb-10 items-center" onPress={() => router.push("/(auth)/login")}>
-            <Text className="text-base text-gray-500">
-              Вже є акаунт?{" "}
-              <Text className="text-blue-500 font-semibold">Увійти</Text>
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+            <TouchableOpacity className="mb-10 items-center" onPress={() => router.push("/(auth)/login")}>
+              <Text className="text-sm text-gray-400">
+                Вже є акаунт?{" "}
+                <Text className="text-blue-500 font-semibold">Увійти</Text>
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </LinearGradient>
   );
 }
