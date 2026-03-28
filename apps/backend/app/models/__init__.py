@@ -9,10 +9,11 @@ from app.models.ai_recommendation import AIRecommendation
 from app.models.family_menu import FamilyMenu
 from app.models.medication_reminder import MedicationReminder
 from app.models.ai_card import AICard
+from app.models.ai_chat_message import AIChatMessage
 
 __all__ = [
     "Family", "User", "HealthProfile", "HealthMetric",
     "DailySurvey", "MedicalDocument", "Meal",
     "AIRecommendation", "FamilyMenu", "MedicationReminder",
-    "AICard",
+    "AICard", "AIChatMessage",
 ]

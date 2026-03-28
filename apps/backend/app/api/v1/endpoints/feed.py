@@ -53,6 +53,19 @@ class DoctorResponse(BaseModel):
     card_count: int = 0
 
 
+class DoctorProfileResponse(BaseModel):
+    id: str
+    name: str
+    specialty: str
+    emoji: str
+    color: str
+    personality: str
+    motto: str
+    card_count: int = 0
+    chat_count: int = 0
+    recent_cards: List[CardResponse] = []
+
+
 # ---- Endpoints ----
 
 @router.get("", response_model=List[CardResponse])
@@ -195,6 +208,82 @@ async def list_doctors(current_user: CurrentUser, db: DB):
         )
         for d in doctors
     ]
+
+
+@router.get("/doctors/{doctor_id}", response_model=DoctorProfileResponse)
+async def get_doctor_profile(
+    doctor_id: str,
+    current_user: CurrentUser,
+    db: DB,
+):
+    """Get doctor profile with stats and recent cards"""
+    from sqlalchemy import func
+    from app.models.ai_chat_message import AIChatMessage
+
+    doc = get_doctor(doctor_id)
+    if not doc:
+        return {"error": "Doctor not found"}
+
+    # Card count
+    card_count_result = await db.execute(
+        select(func.count(AICard.id))
+        .where(AICard.user_id == current_user.id, AICard.doctor_id == doctor_id)
+    )
+    card_count = card_count_result.scalar() or 0
+
+    # Chat message count (count user messages as "chats")
+    chat_count_result = await db.execute(
+        select(func.count(AIChatMessage.id))
+        .where(
+            AIChatMessage.user_id == current_user.id,
+            AIChatMessage.doctor_id == doctor_id,
+            AIChatMessage.role == "user",
+        )
+    )
+    chat_count = chat_count_result.scalar() or 0
+
+    # Recent cards from this doctor
+    recent_result = await db.execute(
+        select(AICard)
+        .where(AICard.user_id == current_user.id, AICard.doctor_id == doctor_id)
+        .order_by(AICard.created_at.desc())
+        .limit(10)
+    )
+    recent_cards = recent_result.scalars().all()
+
+    doc_info = DOCTORS.get(doctor_id, DOCTORS["therapist"])
+    cards_response = [
+        CardResponse(
+            id=c.id,
+            doctor_id=c.doctor_id,
+            doctor_name=doc_info["name"],
+            doctor_emoji=doc_info["emoji"],
+            doctor_color=doc_info["color"],
+            card_type=c.card_type,
+            round_type=c.round_type,
+            title=c.title,
+            body=c.body,
+            metadata=c.metadata,
+            action_type=c.action_type,
+            status=c.status,
+            created_at=c.created_at,
+            acted_at=c.acted_at,
+        )
+        for c in recent_cards
+    ]
+
+    return DoctorProfileResponse(
+        id=doctor_id,
+        name=doc_info["name"],
+        specialty=doc_info["specialty"],
+        emoji=doc_info["emoji"],
+        color=doc_info["color"],
+        personality=doc_info["personality"],
+        motto=doc_info["motto"],
+        card_count=card_count,
+        chat_count=chat_count,
+        recent_cards=cards_response,
+    )
 
 
 @router.post("/generate")

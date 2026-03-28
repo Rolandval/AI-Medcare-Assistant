@@ -78,11 +78,11 @@ function ScoreRing({ score, size = 64 }: { score: number | null; size?: number }
 }
 
 // ---- Doctor Avatar Row ----
-function DoctorRow({ doctors }: { doctors: Doctor[] }) {
+function DoctorRow({ doctors, onPress }: { doctors: Doctor[]; onPress?: (id: string) => void }) {
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 -mx-1">
       {doctors.map((d) => (
-        <View key={d.id} className="items-center mx-2">
+        <TouchableOpacity key={d.id} className="items-center mx-2" onPress={() => onPress?.(d.id)} activeOpacity={0.7}>
           <View
             className="w-12 h-12 rounded-2xl items-center justify-center mb-1"
             style={{ backgroundColor: d.color + "15" }}
@@ -90,7 +90,7 @@ function DoctorRow({ doctors }: { doctors: Doctor[] }) {
             <Text className="text-xl">{d.emoji}</Text>
           </View>
           <Text className="text-xs text-gray-500" numberOfLines={1}>{d.name.split(" ")[1]}</Text>
-        </View>
+        </TouchableOpacity>
       ))}
     </ScrollView>
   );
@@ -220,10 +220,12 @@ function FeedCard({
   card,
   onAction,
   isActing,
+  onChat,
 }: {
   card: AICard;
   onAction: (cardId: string, action: string, data?: any) => void;
   isActing: boolean;
+  onChat?: (doctorId: string) => void;
 }) {
   const isActed = card.status === "acted" || card.status === "dismissed";
 
@@ -283,9 +285,12 @@ function FeedCard({
           {card.action_type === "chat" && (
             <TouchableOpacity
               className="flex-1 bg-blue-50 border border-blue-200 rounded-xl py-2.5 items-center"
-              onPress={() => onAction(card.id, "done")}
+              onPress={() => {
+                onAction(card.id, "done");
+                onChat?.(card.doctor_id);
+              }}
             >
-              <Text className="text-blue-700 font-semibold text-sm">Поговорити</Text>
+              <Text className="text-blue-700 font-semibold text-sm">💬 Поговорити</Text>
             </TouchableOpacity>
           )}
           {card.action_type === "photo" && (
@@ -417,7 +422,12 @@ export default function Dashboard() {
         </View>
 
         {/* Doctor avatars */}
-        {doctors && doctors.length > 0 && <DoctorRow doctors={doctors} />}
+        {doctors && doctors.length > 0 && (
+          <DoctorRow
+            doctors={doctors}
+            onPress={(id) => router.push({ pathname: "/dashboard/doctor-profile", params: { doctorId: id } })}
+          />
+        )}
 
         {/* Generate buttons (if no cards) */}
         {!hasCards && !isLoading && (
@@ -476,6 +486,7 @@ export default function Dashboard() {
                   card={card}
                   onAction={handleAction}
                   isActing={actionMutation.isPending}
+                  onChat={(doctorId) => router.push({ pathname: "/dashboard/chat", params: { doctorId } })}
                 />
               ))}
             </View>
