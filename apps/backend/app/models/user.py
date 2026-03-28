@@ -59,3 +59,4 @@ class User(UUIDMixin, TimestampMixin, Base):
     meals: Mapped[List["Meal"]] = relationship("Meal", back_populates="user")
     ai_recommendations: Mapped[List["AIRecommendation"]] = relationship("AIRecommendation", back_populates="user")
     medication_reminders: Mapped[List["MedicationReminder"]] = relationship("MedicationReminder", back_populates="user")
+    ai_cards: Mapped[List["AICard"]] = relationship("AICard", back_populates="user")

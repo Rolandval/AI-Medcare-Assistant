@@ -8,9 +8,11 @@ from app.models.meal import Meal
 from app.models.ai_recommendation import AIRecommendation
 from app.models.family_menu import FamilyMenu
 from app.models.medication_reminder import MedicationReminder
+from app.models.ai_card import AICard
 
 __all__ = [
     "Family", "User", "HealthProfile", "HealthMetric",
     "DailySurvey", "MedicalDocument", "Meal",
     "AIRecommendation", "FamilyMenu", "MedicationReminder",
+    "AICard",
 ]

@@ -42,7 +42,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="dashboard"
         options={{
-          tabBarIcon: ({ focused }) => <TabIcon emoji="📊" label="Стан" focused={focused} />,
+          tabBarIcon: ({ focused }) => <TabIcon emoji="🩺" label="AI Лікарі" focused={focused} />,
         }}
       />
       <Tabs.Screen
