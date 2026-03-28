@@ -1,5 +1,6 @@
 """Health metric + survey schemas"""
 
+import uuid
 from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field
@@ -14,7 +15,7 @@ class MetricCreate(BaseModel):
 
 
 class MetricResponse(BaseModel):
-    id: str
+    id: uuid.UUID
     metric_type: str
     value: float
     unit: str
@@ -42,7 +43,7 @@ class SurveyCreate(BaseModel):
 
 
 class SurveyResponse(BaseModel):
-    id: str
+    id: uuid.UUID
     survey_type: str
     survey_date: datetime
     wellbeing_score: Optional[int]
