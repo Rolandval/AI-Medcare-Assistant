@@ -154,7 +154,7 @@ export default function Profile() {
         </View>
 
         {/* Quick actions */}
-        <View className="flex-row gap-3 mb-4">
+        <View className="flex-row gap-3 mb-3">
           <TouchableOpacity
             className="flex-1 bg-purple-50 rounded-2xl py-4 items-center border border-purple-100"
             onPress={() => router.push("/(tabs)/profile/history")}
@@ -170,6 +170,13 @@ export default function Profile() {
             <Text className="text-sm font-semibold text-green-700">Здоров'я</Text>
           </TouchableOpacity>
         </View>
+        <TouchableOpacity
+          className="bg-red-50 rounded-2xl py-4 items-center border border-red-100 mb-4 flex-row justify-center gap-2"
+          onPress={() => router.push("/(tabs)/profile/reminders")}
+        >
+          <Text className="text-2xl">💊</Text>
+          <Text className="text-sm font-semibold text-red-700">Нагадування про ліки</Text>
+        </TouchableOpacity>
 
         {/* Telegram */}
         <View className="bg-white rounded-2xl p-5 mb-4 border border-gray-100">

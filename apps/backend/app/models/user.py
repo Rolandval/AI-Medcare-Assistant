@@ -46,6 +46,7 @@ class User(UUIDMixin, TimestampMixin, Base):
     evening_survey_hour: Mapped[int] = mapped_column(default=20)
     evening_survey_minute: Mapped[int] = mapped_column(default=0)
     notifications_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    expo_push_token: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     # Relations
     family: Mapped[Optional["Family"]] = relationship("Family", back_populates="members")
@@ -57,3 +58,4 @@ class User(UUIDMixin, TimestampMixin, Base):
     medical_documents: Mapped[List["MedicalDocument"]] = relationship("MedicalDocument", back_populates="user")
     meals: Mapped[List["Meal"]] = relationship("Meal", back_populates="user")
     ai_recommendations: Mapped[List["AIRecommendation"]] = relationship("AIRecommendation", back_populates="user")
+    medication_reminders: Mapped[List["MedicationReminder"]] = relationship("MedicationReminder", back_populates="user")

@@ -9,7 +9,11 @@ celery_app = Celery(
     "medcare",
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
-    include=["app.tasks.ai_tasks", "app.tasks.survey_tasks"],
+    include=[
+        "app.tasks.ai_tasks",
+        "app.tasks.survey_tasks",
+        "app.tasks.reminder_tasks",
+    ],
 )
 
 celery_app.conf.update(
@@ -21,9 +25,10 @@ celery_app.conf.update(
     task_routes={
         "app.tasks.ai_tasks.*": {"queue": "ai_tasks"},
         "app.tasks.survey_tasks.*": {"queue": "default"},
+        "app.tasks.reminder_tasks.*": {"queue": "default"},
     },
     beat_schedule={
-        # Morning surveys
+        # Morning surveys (Telegram)
         "send-morning-surveys": {
             "task": "app.tasks.survey_tasks.send_morning_surveys",
             "schedule": crontab(
@@ -31,13 +36,36 @@ celery_app.conf.update(
                 minute=settings.MORNING_SURVEY_MINUTE,
             ),
         },
-        # Evening surveys
+        # Evening surveys (Telegram)
         "send-evening-surveys": {
             "task": "app.tasks.survey_tasks.send_evening_surveys",
             "schedule": crontab(
                 hour=settings.EVENING_SURVEY_HOUR,
                 minute=settings.EVENING_SURVEY_MINUTE,
             ),
+        },
+        # Morning survey push notification
+        "push-morning-survey": {
+            "task": "app.tasks.reminder_tasks.send_survey_push",
+            "schedule": crontab(
+                hour=settings.MORNING_SURVEY_HOUR,
+                minute=settings.MORNING_SURVEY_MINUTE,
+            ),
+            "args": ["morning"],
+        },
+        # Evening survey push notification
+        "push-evening-survey": {
+            "task": "app.tasks.reminder_tasks.send_survey_push",
+            "schedule": crontab(
+                hour=settings.EVENING_SURVEY_HOUR,
+                minute=settings.EVENING_SURVEY_MINUTE,
+            ),
+            "args": ["evening"],
+        },
+        # Medication reminders — check every minute
+        "check-medication-reminders": {
+            "task": "app.tasks.reminder_tasks.check_medication_reminders",
+            "schedule": crontab(),  # every minute
         },
         # Weekly family menu generation (Sunday 18:00)
         "generate-weekly-menus": {

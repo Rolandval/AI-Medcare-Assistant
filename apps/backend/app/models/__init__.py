@@ -7,9 +7,10 @@ from app.models.medical_document import MedicalDocument
 from app.models.meal import Meal
 from app.models.ai_recommendation import AIRecommendation
 from app.models.family_menu import FamilyMenu
+from app.models.medication_reminder import MedicationReminder
 
 __all__ = [
     "Family", "User", "HealthProfile", "HealthMetric",
     "DailySurvey", "MedicalDocument", "Meal",
-    "AIRecommendation", "FamilyMenu",
+    "AIRecommendation", "FamilyMenu", "MedicationReminder",
 ]

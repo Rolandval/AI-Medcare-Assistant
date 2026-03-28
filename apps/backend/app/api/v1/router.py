@@ -11,6 +11,7 @@ from app.api.v1.endpoints.family import router as family_router
 from app.api.v1.endpoints.ai import router as ai_router
 from app.api.v1.endpoints.telegram_webhook import router as webhook_router
 from app.api.v1.endpoints.telegram_link import router as telegram_router
+from app.api.v1.endpoints.notifications import router as notifications_router
 
 api_router = APIRouter()
 
@@ -23,3 +24,4 @@ api_router.include_router(family_router)
 api_router.include_router(ai_router)
 api_router.include_router(webhook_router)
 api_router.include_router(telegram_router)
+api_router.include_router(notifications_router)
