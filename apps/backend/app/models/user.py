@@ -61,3 +61,5 @@ class User(UUIDMixin, TimestampMixin, Base):
     medication_reminders: Mapped[List["MedicationReminder"]] = relationship("MedicationReminder", back_populates="user")
     ai_cards: Mapped[List["AICard"]] = relationship("AICard", back_populates="user")
     chat_messages: Mapped[List["AIChatMessage"]] = relationship("AIChatMessage", back_populates="user")
+    streaks: Mapped[List["UserStreak"]] = relationship("UserStreak", back_populates="user")
+    achievements: Mapped[List["UserAchievement"]] = relationship("UserAchievement", back_populates="user")

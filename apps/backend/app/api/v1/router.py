@@ -14,6 +14,7 @@ from app.api.v1.endpoints.telegram_link import router as telegram_router
 from app.api.v1.endpoints.notifications import router as notifications_router
 from app.api.v1.endpoints.feed import router as feed_router
 from app.api.v1.endpoints.ai_chat import router as ai_chat_router
+from app.api.v1.endpoints.gamification import router as gamification_router
 
 api_router = APIRouter()
 
@@ -29,3 +30,4 @@ api_router.include_router(telegram_router)
 api_router.include_router(notifications_router)
 api_router.include_router(feed_router)
 api_router.include_router(ai_chat_router)
+api_router.include_router(gamification_router)

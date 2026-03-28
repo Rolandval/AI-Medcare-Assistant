@@ -10,10 +10,12 @@ from app.models.family_menu import FamilyMenu
 from app.models.medication_reminder import MedicationReminder
 from app.models.ai_card import AICard
 from app.models.ai_chat_message import AIChatMessage
+from app.models.user_streak import UserStreak
+from app.models.user_achievement import UserAchievement
 
 __all__ = [
     "Family", "User", "HealthProfile", "HealthMetric",
     "DailySurvey", "MedicalDocument", "Meal",
     "AIRecommendation", "FamilyMenu", "MedicationReminder",
-    "AICard", "AIChatMessage",
+    "AICard", "AIChatMessage", "UserStreak", "UserAchievement",
 ]

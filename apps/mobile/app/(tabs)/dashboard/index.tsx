@@ -60,8 +60,8 @@ function ScoreRing({ score, size = 64 }: { score: number | null; size?: number }
   const strokeWidth = 5;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const progress = score ? (score / 10) * circumference : 0;
-  const color = !score ? "#d1d5db" : score >= 7 ? "#10b981" : score >= 4 ? "#f59e0b" : "#ef4444";
+  const progress = score ? (score / 100) * circumference : 0;
+  const color = !score ? "#d1d5db" : score >= 70 ? "#10b981" : score >= 40 ? "#f59e0b" : "#ef4444";
 
   return (
     <View style={{ width: size, height: size }} className="items-center justify-center">
@@ -360,16 +360,25 @@ export default function Dashboard() {
     staleTime: 300_000,
   });
 
-  const { data: recommendation } = useQuery({
-    queryKey: ["dashboard-rec"],
-    queryFn: () => api.get("/ai/dashboard").then((r) => r.data),
-    staleTime: 300_000,
+  const { data: gamification } = useQuery<{
+    score: number;
+    streak: { type: string; emoji: string; current: number };
+    achievements_unlocked: number;
+    achievements_total: number;
+    total_points: number;
+  }>({
+    queryKey: ["gamification-summary"],
+    queryFn: () => api.get("/ai/gamification/summary").then((r) => r.data),
+    staleTime: 60_000,
   });
 
   const actionMutation = useMutation({
     mutationFn: ({ cardId, action, data }: { cardId: string; action: string; data?: any }) =>
       api.post(`/ai/feed/${cardId}/action`, { action, data }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["ai-feed"] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["ai-feed"] });
+      queryClient.invalidateQueries({ queryKey: ["gamification-summary"] });
+    },
   });
 
   const generateMutation = useMutation({
@@ -384,7 +393,7 @@ export default function Dashboard() {
     actionMutation.mutate({ cardId, action, data });
   }, []);
 
-  const healthScore = recommendation?.content?.health_score ?? null;
+  const healthScore = gamification?.score ?? null;
 
   // Group cards by round_type
   const groupedCards: Record<string, AICard[]> = {};
@@ -405,7 +414,7 @@ export default function Dashboard() {
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} />}
       >
         {/* Header */}
-        <View className="flex-row justify-between items-center mb-4">
+        <View className="flex-row justify-between items-center mb-2">
           <View className="flex-row items-center gap-3">
             <ScoreRing score={healthScore} />
             <View>
@@ -413,12 +422,22 @@ export default function Dashboard() {
               <Text className="text-xl font-bold text-gray-900">{user?.name || "Користувач"}</Text>
             </View>
           </View>
-          <TouchableOpacity
-            onPress={() => router.push("/(tabs)/dashboard/add-metric")}
-            className="bg-emerald-50 rounded-xl px-3 py-2"
-          >
-            <Text className="text-emerald-600 font-semibold text-sm">+ Метрики</Text>
-          </TouchableOpacity>
+          <View className="flex-row gap-2">
+            {gamification?.streak && gamification.streak.current > 0 && (
+              <View className="bg-orange-50 rounded-xl px-3 py-2 flex-row items-center gap-1">
+                <Text className="text-sm">{gamification.streak.emoji}</Text>
+                <Text className="text-orange-600 font-bold text-sm">{gamification.streak.current}</Text>
+              </View>
+            )}
+            <TouchableOpacity
+              onPress={() => router.push("/(tabs)/dashboard/achievements")}
+              className="bg-amber-50 rounded-xl px-3 py-2"
+            >
+              <Text className="text-amber-600 font-semibold text-sm">
+                🏆 {gamification?.achievements_unlocked ?? 0}/{gamification?.achievements_total ?? 0}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {/* Doctor avatars */}

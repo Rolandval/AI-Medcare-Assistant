@@ -159,7 +159,25 @@ async def act_on_card(
         card.status = "pending"  # Keep as pending for later
 
     await db.commit()
-    return {"ok": True, "status": card.status}
+
+    # Update streaks + check achievements on meaningful actions
+    new_achievements = []
+    if body.action in ("done", "survey_submit"):
+        from app.services.gamification import update_streak, check_and_unlock_achievements
+
+        # Check-in streak (any interaction counts)
+        await update_streak(db, current_user.id, "checkin")
+
+        # Type-specific streaks
+        if card.card_type == "challenge":
+            await update_streak(db, current_user.id, "challenge")
+        elif card.card_type == "survey":
+            await update_streak(db, current_user.id, "checkin")
+
+        # Check achievements
+        new_achievements = await check_and_unlock_achievements(db, current_user.id)
+
+    return {"ok": True, "status": card.status, "new_achievements": new_achievements}
 
 
 async def _save_embedded_survey(db, user_id: uuid.UUID, data: dict):
