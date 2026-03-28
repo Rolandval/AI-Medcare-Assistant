@@ -1,6 +1,7 @@
 import { ScrollView, View, Text, TouchableOpacity, Alert, RefreshControl } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "expo-router";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import { LinearGradient } from "expo-linear-gradient";
@@ -15,7 +16,7 @@ const DOC_TYPES = [
   { key: "other", label: "Інше", emoji: "📄", colors: ["#f9fafb", "#f3f4f6"] as [string, string] },
 ];
 
-function DocumentCard({ doc }: { doc: any }) {
+function DocumentCard({ doc, onPress }: { doc: any; onPress: () => void }) {
   const isDone = doc.ocr_status === "done";
   const isProcessing = doc.ocr_status === "processing" || doc.ocr_status === "pending";
 
@@ -27,8 +28,14 @@ function DocumentCard({ doc }: { doc: any }) {
 
   const typeInfo = DOC_TYPES.find((t) => t.key === doc.doc_type) || DOC_TYPES[5];
 
+  const indicatorCount = doc.ai_analysis?.indicators?.length || doc.parsed_data?.length || 0;
+  const flagCount = doc.ai_flags?.length || 0;
+  const dateStr = doc.ai_analysis?.document_date || new Date(doc.created_at).toLocaleDateString("uk-UA");
+
   return (
-    <View
+    <TouchableOpacity
+      onPress={onPress}
+      activeOpacity={0.7}
       className="bg-white rounded-2xl p-4 mb-3"
       style={{ elevation: 1, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.04, shadowRadius: 4 }}
     >
@@ -38,18 +45,36 @@ function DocumentCard({ doc }: { doc: any }) {
         </View>
         <View className="flex-1">
           <Text className="text-base font-semibold text-gray-900">{doc.title || typeInfo.label}</Text>
-          <Text className="text-xs text-gray-400 mt-0.5">{typeInfo.label}</Text>
+          <Text className="text-xs text-gray-400 mt-0.5">{dateStr} · {typeInfo.label}</Text>
         </View>
         <View className={`${statusConfig.bg} ${statusConfig.border} border rounded-full px-3 py-1`}>
           <Text className={`text-xs font-medium ${statusConfig.text}`}>{statusConfig.label}</Text>
         </View>
       </View>
 
-      {/* AI Flags */}
+      {/* Stats row for processed docs */}
+      {isDone && indicatorCount > 0 && (
+        <View className="flex-row gap-3 mt-3 pt-3 border-t border-gray-50">
+          <View className="flex-row items-center gap-1.5">
+            <Text className="text-xs">📊</Text>
+            <Text className="text-xs text-gray-500">{indicatorCount} показників</Text>
+          </View>
+          {flagCount > 0 && (
+            <View className="flex-row items-center gap-1.5">
+              <Text className="text-xs">🚨</Text>
+              <Text className="text-xs text-red-500 font-medium">{flagCount} відхилень</Text>
+            </View>
+          )}
+          <View className="flex-1" />
+          <Text className="text-xs text-blue-500 font-medium">Детальніше →</Text>
+        </View>
+      )}
+
+      {/* AI Flags preview */}
       {doc.ai_flags?.length > 0 && (
         <View className="mt-3 bg-red-50 rounded-xl p-3 border border-red-100">
           <Text className="text-xs font-semibold text-red-700 mb-1.5 uppercase tracking-wide">Відхилення від норми</Text>
-          {doc.ai_flags.map((flag: any, i: number) => (
+          {doc.ai_flags.slice(0, 2).map((flag: any, i: number) => (
             <View key={i} className="flex-row items-start gap-2 mb-1">
               <View className="w-1.5 h-1.5 rounded-full bg-red-400 mt-2" />
               <Text className="text-sm text-red-600 flex-1">
@@ -57,13 +82,17 @@ function DocumentCard({ doc }: { doc: any }) {
               </Text>
             </View>
           ))}
+          {doc.ai_flags.length > 2 && (
+            <Text className="text-xs text-red-400 mt-1">+ ще {doc.ai_flags.length - 2}</Text>
+          )}
         </View>
       )}
-    </View>
+    </TouchableOpacity>
   );
 }
 
 export default function Documents() {
+  const router = useRouter();
   const queryClient = useQueryClient();
 
   const { data: docs, isRefetching, refetch } = useQuery({
@@ -160,7 +189,13 @@ export default function Documents() {
             </Text>
           </View>
         ) : (
-          docs.map((doc: any) => <DocumentCard key={doc.id} doc={doc} />)
+          docs.map((doc: any) => (
+            <DocumentCard
+              key={doc.id}
+              doc={doc}
+              onPress={() => router.push({ pathname: "/documents/detail", params: { docId: doc.id } })}
+            />
+          ))
         )}
       </ScrollView>
     </SafeAreaView>

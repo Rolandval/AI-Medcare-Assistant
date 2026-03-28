@@ -70,6 +70,7 @@ async def get_my_family(current_user: CurrentUser, db: DB):
             "birth_date": member.birth_date,
             "gender": member.gender,
             "avatar_url": member.avatar_url,
+            "is_admin": member.is_family_admin,
         })
 
     return {
@@ -99,6 +100,83 @@ async def get_current_menu(current_user: CurrentUser, db: DB):
     if not menu:
         raise HTTPException(status_code=404, detail="No menu for this week. Generate one first.")
     return menu
+
+
+@router.get("/members/{member_id}/health")
+async def get_member_health(member_id: str, current_user: CurrentUser, db: DB):
+    """Get health summary for a family member (admin only or self)"""
+    if not current_user.family_id:
+        raise HTTPException(status_code=404, detail="Not in a family")
+
+    member_uuid = uuid.UUID(member_id)
+
+    # Verify member is in same family
+    result = await db.execute(
+        select(User).where(User.id == member_uuid, User.family_id == current_user.family_id)
+    )
+    member = result.scalar_one_or_none()
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found in your family")
+
+    # Only admin or the member themselves can view
+    if not current_user.is_family_admin and current_user.id != member_uuid:
+        raise HTTPException(status_code=403, detail="Only admin can view other members")
+
+    from app.models.health_metric import HealthMetric
+    from app.models.medical_document import MedicalDocument
+
+    # Latest metrics — key-value model (metric_type + value)
+    metrics_result = await db.execute(
+        select(HealthMetric)
+        .where(HealthMetric.user_id == member_uuid)
+        .order_by(HealthMetric.recorded_at.desc())
+        .limit(20)
+    )
+    all_metrics = metrics_result.scalars().all()
+
+    latest_metrics = {}
+    seen_types: set[str] = set()
+    for m in all_metrics:
+        if m.metric_type in seen_types:
+            continue
+        seen_types.add(m.metric_type)
+        if m.metric_type == "weight":
+            latest_metrics["weight"] = round(m.value, 1)
+        elif m.metric_type == "blood_pressure_systolic":
+            latest_metrics["systolic"] = int(m.value)
+        elif m.metric_type == "blood_pressure_diastolic":
+            latest_metrics["diastolic"] = int(m.value)
+        elif m.metric_type == "heart_rate":
+            latest_metrics["heart_rate"] = int(m.value)
+
+    # Combine systolic/diastolic into blood_pressure string
+    if "systolic" in latest_metrics and "diastolic" in latest_metrics:
+        latest_metrics["blood_pressure"] = f"{latest_metrics.pop('systolic')}/{latest_metrics.pop('diastolic')}"
+    else:
+        latest_metrics.pop("systolic", None)
+        latest_metrics.pop("diastolic", None)
+
+    # Recent document flags
+    docs_result = await db.execute(
+        select(MedicalDocument)
+        .where(MedicalDocument.user_id == member_uuid, MedicalDocument.ai_flags.isnot(None))
+        .order_by(MedicalDocument.created_at.desc())
+        .limit(3)
+    )
+    docs = docs_result.scalars().all()
+
+    recent_flags = []
+    for doc in docs:
+        if doc.ai_flags:
+            for flag in doc.ai_flags[:2]:
+                recent_flags.append(flag)
+
+    return {
+        "member_id": str(member_uuid),
+        "member_name": member.name,
+        "latest_metrics": latest_metrics,
+        "recent_flags": recent_flags[:5],
+    }
 
 
 @router.post("/menu/generate")
