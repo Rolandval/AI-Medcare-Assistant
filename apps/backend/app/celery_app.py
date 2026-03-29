@@ -46,23 +46,10 @@ celery_app.conf.update(
                 minute=settings.EVENING_SURVEY_MINUTE,
             ),
         },
-        # Morning survey push notification
-        "push-morning-survey": {
-            "task": "app.tasks.reminder_tasks.send_survey_push",
-            "schedule": crontab(
-                hour=settings.MORNING_SURVEY_HOUR,
-                minute=settings.MORNING_SURVEY_MINUTE,
-            ),
-            "args": ["morning"],
-        },
-        # Evening survey push notification
-        "push-evening-survey": {
-            "task": "app.tasks.reminder_tasks.send_survey_push",
-            "schedule": crontab(
-                hour=settings.EVENING_SURVEY_HOUR,
-                minute=settings.EVENING_SURVEY_MINUTE,
-            ),
-            "args": ["evening"],
+        # Survey push notifications — runs every 30 min, sends to users whose configured time matches
+        "check-survey-pushes": {
+            "task": "app.tasks.reminder_tasks.check_survey_pushes",
+            "schedule": crontab(minute="0,30"),
         },
         # Medication reminders — check every minute
         "check-medication-reminders": {

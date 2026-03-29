@@ -99,6 +99,14 @@ export default function Profile() {
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
         >
+          {/* Settings gear */}
+          <TouchableOpacity
+            onPress={() => router.push("/(tabs)/profile/settings")}
+            className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 items-center justify-center"
+            activeOpacity={0.7}
+          >
+            <Text className="text-lg">⚙️</Text>
+          </TouchableOpacity>
           <TouchableOpacity onPress={handlePickAvatar} className="relative mb-3">
             {user?.avatar_url ? (
               <Image

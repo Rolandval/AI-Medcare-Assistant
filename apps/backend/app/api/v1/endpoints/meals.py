@@ -65,8 +65,33 @@ async def get_today_meals(current_user: CurrentUser, db: DB):
     total_fats = sum(m.fats_g or 0 for m in meals)
     total_carbs = sum(m.carbs_g or 0 for m in meals)
 
+    meals_data = []
+    for m in meals:
+        dishes = m.ai_recognition.get("dishes", []) if m.ai_recognition else []
+        meals_data.append({
+            "id": str(m.id),
+            "meal_type": m.meal_type,
+            "photo_url": m.photo_url,
+            "description": m.description,
+            "calories": m.calories,
+            "proteins_g": m.proteins_g,
+            "fats_g": m.fats_g,
+            "carbs_g": m.carbs_g,
+            "fiber_g": m.fiber_g,
+            "health_score": m.health_score,
+            "ai_comment": m.ai_comment,
+            "recognition_status": m.recognition_status,
+            "food_items": [
+                {"name": d.get("name", ""), "amount": f"{d.get('portion_g', '')}г", "calories": d.get("calories")}
+                for d in dishes
+            ],
+            "confidence": m.ai_recognition.get("confidence") if m.ai_recognition else None,
+            "eaten_at": m.eaten_at.isoformat() if m.eaten_at else None,
+            "created_at": m.created_at.isoformat() if m.created_at else None,
+        })
+
     return {
-        "meals": meals,
+        "meals": meals_data,
         "totals": {
             "calories": round(total_calories),
             "proteins_g": round(total_proteins, 1),

@@ -24,7 +24,7 @@ export default function Register() {
     setLoading(true);
     try {
       await register(name.trim(), email.toLowerCase().trim(), password);
-      router.replace("/(tabs)/dashboard");
+      router.replace("/(auth)/onboarding");
     } catch (e: any) {
       Alert.alert("Помилка", e.response?.data?.detail || "Спробуй ще раз");
     } finally {

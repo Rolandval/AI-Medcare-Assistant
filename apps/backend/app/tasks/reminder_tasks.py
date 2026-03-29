@@ -68,10 +68,12 @@ async def _send_batch(messages):
     await send_push_notifications_batch(messages)
 
 
-@celery_app.task(name="app.tasks.reminder_tasks.send_survey_push")
-def send_survey_push(survey_type: str):
-    """Send push notification reminding users to fill survey"""
+@celery_app.task(name="app.tasks.reminder_tasks.check_survey_pushes")
+def check_survey_pushes():
+    """Check all users and send survey push if current hour matches their configured time"""
     import asyncio
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
     from sqlalchemy import create_engine as sync_create, select
     from sqlalchemy.orm import Session
     from app.core.config import settings
@@ -79,6 +81,9 @@ def send_survey_push(survey_type: str):
 
     sync_url = settings.DATABASE_URL.replace("+asyncpg", "+psycopg2")
     engine = sync_create(sync_url)
+
+    now = datetime.now(ZoneInfo("Europe/Kyiv"))
+    current_hour = now.hour
 
     with Session(engine) as db:
         users = db.execute(
@@ -91,19 +96,29 @@ def send_survey_push(survey_type: str):
 
         messages = []
         for user in users:
-            if survey_type == "morning":
-                title = "🌅 Доброго ранку!"
-                body = f"{user.name}, як ти себе почуваєш? Заповни ранкове опитування"
-            else:
-                title = "🌙 Добрий вечір!"
-                body = f"{user.name}, як пройшов день? Заповни вечірнє опитування"
+            morning_h = getattr(user, "morning_survey_hour", None) or 8
+            evening_h = getattr(user, "evening_survey_hour", None) or 21
 
-            messages.append({
-                "to": user.expo_push_token,
-                "title": title,
-                "body": body,
-                "data": {"type": "survey", "survey_type": survey_type},
-            })
+            if current_hour == morning_h:
+                messages.append({
+                    "to": user.expo_push_token,
+                    "title": "🌅 Доброго ранку!",
+                    "body": f"{user.name}, як ти себе почуваєш? Заповни ранкове опитування",
+                    "data": {"type": "survey", "survey_type": "morning"},
+                })
+            elif current_hour == evening_h:
+                messages.append({
+                    "to": user.expo_push_token,
+                    "title": "🌙 Добрий вечір!",
+                    "body": f"{user.name}, як пройшов день? Заповни вечірнє опитування",
+                    "data": {"type": "survey", "survey_type": "evening"},
+                })
 
     if messages:
         asyncio.run(_send_batch(messages))
+
+
+@celery_app.task(name="app.tasks.reminder_tasks.send_survey_push")
+def send_survey_push(survey_type: str):
+    """Legacy: Send survey push to all users (kept for backwards compat)"""
+    check_survey_pushes.delay()
