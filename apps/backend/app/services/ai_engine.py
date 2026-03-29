@@ -2,12 +2,15 @@
 
 import asyncio
 import json
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import anthropic
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 # ---- Agent Prompts ----
@@ -165,8 +168,12 @@ class AIEngine:
             if start >= 0 and end > start:
                 return {"agent": agent_name, **json.loads(text[start:end])}
 
+        except anthropic.APIError as e:
+            logger.error("Claude API error in agent %s: %s", agent_name, e)
+        except json.JSONDecodeError as e:
+            logger.warning("Failed to parse JSON from agent %s: %s", agent_name, e)
         except Exception as e:
-            pass
+            logger.exception("Unexpected error in agent %s: %s", agent_name, e)
 
         return {"agent": agent_name, "assessment": "Недостатньо даних для аналізу", "recommendations": [], "urgent": False}
 
@@ -258,7 +265,10 @@ class AIEngine:
         end = synth_text.rfind("}") + 1
         synth_data = {}
         if start >= 0 and end > start:
-            synth_data = json.loads(synth_text[start:end])
+            try:
+                synth_data = json.loads(synth_text[start:end])
+            except json.JSONDecodeError as e:
+                logger.warning("Failed to parse synthesis JSON: %s", e)
 
         return {
             "agents_used": relevant_agents,
@@ -269,20 +279,21 @@ class AIEngine:
 
     async def recognize_food(self, image_url: str) -> dict:
         """Recognize food from photo using Claude Vision"""
-        message = self.client.messages.create(
-            model=settings.CLAUDE_MODEL,
-            max_tokens=600,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "image",
-                            "source": {"type": "url", "url": image_url},
-                        },
-                        {
-                            "type": "text",
-                            "text": """Визнач їжу на фото. Відповідь тільки JSON:
+        try:
+            message = self.client.messages.create(
+                model=settings.CLAUDE_MODEL,
+                max_tokens=600,
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "image",
+                                "source": {"type": "url", "url": image_url},
+                            },
+                            {
+                                "type": "text",
+                                "text": """Визнач їжу на фото. Відповідь тільки JSON:
 {
   "dishes": [{"name": "...", "portion_g": 200}],
   "total_calories": 450,
@@ -294,21 +305,44 @@ class AIEngine:
   "confidence": 0.85,
   "comment": "коротко про корисність"
 }""",
-                        },
-                    ],
-                }
-            ],
-        )
+                            },
+                        ],
+                    }
+                ],
+            )
 
-        text = message.content[0].text
-        start = text.find("{")
-        end = text.rfind("}") + 1
-        if start >= 0 and end > start:
-            return json.loads(text[start:end])
-        return {}
+            text = message.content[0].text
+            start = text.find("{")
+            end = text.rfind("}") + 1
+            if start >= 0 and end > start:
+                return json.loads(text[start:end])
+            logger.warning("No JSON found in food recognition response")
+            return {}
+        except anthropic.APIError as e:
+            logger.error("Claude API error in food recognition: %s", e)
+            return {}
+        except json.JSONDecodeError as e:
+            logger.warning("Failed to parse food recognition JSON: %s", e)
+            return {}
+        except Exception as e:
+            logger.exception("Unexpected error in food recognition: %s", e)
+            return {}
 
     async def process_medical_document(self, file_url: str, doc_type: str) -> dict:
         """OCR and analyze medical document via Claude Vision"""
+        try:
+            return await self._process_medical_document_inner(file_url, doc_type)
+        except anthropic.APIError as e:
+            logger.error("Claude API error in document processing: %s", e)
+            return {}
+        except json.JSONDecodeError as e:
+            logger.warning("Failed to parse document analysis JSON: %s", e)
+            return {}
+        except Exception as e:
+            logger.exception("Unexpected error in document processing: %s", e)
+            return {}
+
+    async def _process_medical_document_inner(self, file_url: str, doc_type: str) -> dict:
         message = self.client.messages.create(
             model=settings.CLAUDE_MODEL,
             max_tokens=2000,
@@ -357,6 +391,19 @@ class AIEngine:
 
     async def generate_family_menu(self, family_members: list) -> dict:
         """Generate weekly family menu optimized for all members"""
+        try:
+            return await self._generate_family_menu_inner(family_members)
+        except anthropic.APIError as e:
+            logger.error("Claude API error in menu generation: %s", e)
+            return {}
+        except json.JSONDecodeError as e:
+            logger.warning("Failed to parse menu generation JSON: %s", e)
+            return {}
+        except Exception as e:
+            logger.exception("Unexpected error in menu generation: %s", e)
+            return {}
+
+    async def _generate_family_menu_inner(self, family_members: list) -> dict:
         members_info = "\n".join([
             f"- {m['name']}, {m.get('age', '?')}р, стан: {m.get('health_summary', 'нормальний')}, "
             f"обмеження: {', '.join(m.get('dietary_restrictions', ['немає']))}"

@@ -122,3 +122,42 @@ def check_survey_pushes():
 def send_survey_push(survey_type: str):
     """Legacy: Send survey push to all users (kept for backwards compat)"""
     check_survey_pushes.delay()
+
+
+@celery_app.task(name="app.tasks.reminder_tasks.send_card_reminder")
+def send_card_reminder(user_id: str, card_id: str):
+    """Send a push reminder for a specific AI card the user snoozed"""
+    import asyncio
+    from sqlalchemy import create_engine as sync_create
+    from sqlalchemy.orm import Session
+    from app.core.config import settings
+    from app.models.user import User
+    from app.models.ai_card import AICard
+
+    sync_url = settings.DATABASE_URL.replace("+asyncpg", "+psycopg2")
+    engine = sync_create(sync_url)
+
+    with Session(engine) as db:
+        user = db.get(User, user_id)
+        card = db.get(AICard, card_id)
+
+        if not user or not card or not user.expo_push_token:
+            return
+
+        if card.status != "pending":
+            return  # Already acted
+
+        from app.services.ai_doctors import DOCTORS
+        doc = DOCTORS.get(card.doctor_id, {})
+        emoji = doc.get("emoji", "🩺")
+        name = doc.get("name", "Лікар")
+
+        messages = [{
+            "to": user.expo_push_token,
+            "title": f"{emoji} {name} нагадує",
+            "body": card.title or "У тебе є незавершена картка",
+            "data": {"type": "card_reminder", "card_id": card_id},
+        }]
+
+    if messages:
+        asyncio.run(_send_batch(messages))

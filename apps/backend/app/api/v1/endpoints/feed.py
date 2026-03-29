@@ -156,7 +156,12 @@ async def act_on_card(
         if body.data:
             await _save_embedded_survey(db, current_user.id, body.data)
     elif body.action == "remind":
-        card.status = "pending"  # Keep as pending for later
+        card.status = "pending"  # Keep as pending, schedule push reminder in 2 hours
+        from app.tasks.reminder_tasks import send_card_reminder
+        send_card_reminder.apply_async(
+            args=[str(current_user.id), str(card.id)],
+            countdown=7200,  # 2 hours
+        )
 
     await db.commit()
 

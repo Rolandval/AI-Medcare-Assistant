@@ -48,6 +48,7 @@ services:
         condition: service_healthy
     volumes:
       - ./apps/backend:/app
+      - backend_logs:/app/logs
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
 
   celery_worker:
@@ -65,7 +66,14 @@ services:
         condition: service_healthy
     volumes:
       - ./apps/backend:/app
+      - backend_logs:/app/logs
     command: celery -A app.celery_app worker --loglevel=info -Q default,ai_tasks
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A app.celery_app inspect ping --timeout 5 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   celery_beat:
     build:
@@ -81,6 +89,21 @@ services:
       - ./apps/backend:/app
     command: celery -A app.celery_app beat --loglevel=info
 
+  flower:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    container_name: medcare_flower
+    restart: unless-stopped
+    env_file:
+      - .env
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+    command: celery -A app.celery_app flower --port=5555 --basic_auth=${FLOWER_USER:-admin}:${FLOWER_PASS:-admin}
+
 volumes:
   postgres_data:
   redis_data:
+  backend_logs:

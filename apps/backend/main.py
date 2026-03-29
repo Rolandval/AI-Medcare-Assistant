@@ -1,13 +1,35 @@
 """AI-Medcare-Assistant — FastAPI Application Entry Point"""
 
+import logging
+import sys
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.core.database import engine, Base
 from app.api.v1.router import api_router
+
+# ---- Structured Logging ----
+LOG_FORMAT = "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s"
+LOG_LEVEL = logging.DEBUG if settings.DEBUG else logging.INFO
+
+logging.basicConfig(
+    level=LOG_LEVEL,
+    format=LOG_FORMAT,
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+    ],
+)
+
+# Quiet noisy libs
+logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("httpcore").setLevel(logging.WARNING)
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+logging.getLogger("sqlalchemy.engine").setLevel(logging.WARNING)
+
+logger = logging.getLogger("medcare")
 
 
 @asynccontextmanager
@@ -22,7 +44,7 @@ async def lifespan(app: FastAPI):
             from app.telegram.bot import setup_webhook
             await setup_webhook()
         except Exception as e:
-            print(f"Warning: Telegram webhook setup failed: {e}")
+            logger.warning("Telegram webhook setup failed: %s", e)
 
     yield
 
@@ -47,6 +69,24 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix="/api/v1")
+
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    """Log all API requests with timing"""
+    import time
+    start = time.perf_counter()
+    response = await call_next(request)
+    elapsed = (time.perf_counter() - start) * 1000
+    if request.url.path != "/health":
+        logger.info(
+            "%s %s → %d (%.0fms)",
+            request.method,
+            request.url.path,
+            response.status_code,
+            elapsed,
+        )
+    return response
 
 
 @app.get("/health")

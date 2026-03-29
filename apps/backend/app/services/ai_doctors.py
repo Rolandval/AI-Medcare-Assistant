@@ -2,12 +2,15 @@
 
 import json
 import asyncio
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import anthropic
 
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 # ---- Doctor Characters ----
 
@@ -218,8 +221,12 @@ class AICardGenerator:
                     "body": data.get("body", ""),
                     "metadata": data.get("metadata", {}),
                 }
+        except anthropic.APIError as e:
+            logger.error("Claude API error generating card for %s: %s", doctor_id, e)
+        except json.JSONDecodeError as e:
+            logger.warning("Failed to parse card JSON from %s: %s", doctor_id, e)
         except Exception as e:
-            pass
+            logger.exception("Unexpected error generating card for %s: %s", doctor_id, e)
 
         # Fallback
         doc = DOCTORS[doctor_id]
