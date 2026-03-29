@@ -1,9 +1,12 @@
-"""Celery AI background tasks"""
+"""Celery AI background tasks with Telegram result callbacks"""
 
 import asyncio
+import logging
 from datetime import date, timedelta, datetime, timezone
 
 from app.celery_app import celery_app
+
+logger = logging.getLogger(__name__)
 
 
 def run_async(coro):
@@ -17,7 +20,7 @@ def run_async(coro):
 
 @celery_app.task(name="app.tasks.ai_tasks.analyze_health_task", queue="ai_tasks")
 def analyze_health_task(user_id: str):
-    """Analyze user health and save AI recommendation"""
+    """Analyze user health and save AI recommendation, notify via Telegram"""
     from sqlalchemy import select, create_engine
     from sqlalchemy.orm import Session
     from app.core.config import settings
@@ -26,7 +29,6 @@ def analyze_health_task(user_id: str):
     from app.models.daily_survey import DailySurvey
     from app.models.ai_recommendation import AIRecommendation
     from app.services.ai_engine import AIEngine
-    from datetime import date
 
     # Use sync engine for Celery
     from sqlalchemy import create_engine as sync_create
@@ -105,7 +107,11 @@ def analyze_health_task(user_id: str):
 
         # Run AI analysis
         engine_ai = AIEngine()
-        result = asyncio.run(engine_ai.analyze_health(user_data))
+        try:
+            result = asyncio.run(engine_ai.analyze_health(user_data))
+        except Exception as e:
+            logger.error("AI health analysis failed for user %s: %s", user_id, e)
+            return
 
         # Save recommendation
         rec = AIRecommendation(
@@ -117,15 +123,27 @@ def analyze_health_task(user_id: str):
         )
         db.add(rec)
         db.commit()
+        db.refresh(rec)
+
+        # Telegram callback
+        telegram_id = user.telegram_id
+        if telegram_id:
+            try:
+                from app.telegram.utils import send_advice_result
+                run_async(send_advice_result(telegram_id, rec))
+                logger.info("Sent advice result to telegram_id=%s", telegram_id)
+            except Exception as e:
+                logger.warning("Failed to send advice to Telegram: %s", e)
 
 
 @celery_app.task(name="app.tasks.ai_tasks.recognize_meal_task", queue="ai_tasks")
-def recognize_meal_task(meal_id: str):
-    """Recognize food from meal photo"""
+def recognize_meal_task(meal_id: str, telegram_callback_id: int = None):
+    """Recognize food from meal photo, send result to Telegram if applicable"""
     from sqlalchemy import create_engine as sync_create
     from sqlalchemy.orm import Session
     from app.core.config import settings
     from app.models.meal import Meal
+    from app.models.user import User
     from app.services.ai_engine import AIEngine
 
     sync_url = settings.DATABASE_URL.replace("+asyncpg", "+psycopg2")
@@ -157,18 +175,40 @@ def recognize_meal_task(meal_id: str):
                 meal.recognition_status = "failed"
 
             db.commit()
-        except Exception:
+            db.refresh(meal)
+
+            logger.info("Meal %s recognition: %s", meal_id, meal.recognition_status)
+
+        except Exception as e:
+            logger.error("Meal recognition failed for %s: %s", meal_id, e)
             meal.recognition_status = "failed"
             db.commit()
+            db.refresh(meal)
+
+        # Send result to Telegram
+        tg_id = telegram_callback_id
+        if not tg_id:
+            # Try to get telegram_id from user
+            user = db.get(User, str(meal.user_id))
+            if user:
+                tg_id = user.telegram_id
+
+        if tg_id:
+            try:
+                from app.telegram.utils import send_meal_result
+                run_async(send_meal_result(tg_id, meal))
+            except Exception as e:
+                logger.warning("Failed to send meal result to Telegram: %s", e)
 
 
 @celery_app.task(name="app.tasks.ai_tasks.process_document_task", queue="ai_tasks")
-def process_document_task(doc_id: str):
-    """OCR + analyze medical document"""
+def process_document_task(doc_id: str, telegram_callback_id: int = None):
+    """OCR + analyze medical document, send result to Telegram if applicable"""
     from sqlalchemy import create_engine as sync_create
     from sqlalchemy.orm import Session
     from app.core.config import settings
     from app.models.medical_document import MedicalDocument
+    from app.models.user import User
     from app.services.ai_engine import AIEngine
 
     sync_url = settings.DATABASE_URL.replace("+asyncpg", "+psycopg2")
@@ -195,9 +235,29 @@ def process_document_task(doc_id: str):
                 doc.ocr_status = "failed"
 
             db.commit()
-        except Exception:
+            db.refresh(doc)
+
+            logger.info("Document %s processing: %s", doc_id, doc.ocr_status)
+
+        except Exception as e:
+            logger.error("Document processing failed for %s: %s", doc_id, e)
             doc.ocr_status = "failed"
             db.commit()
+            db.refresh(doc)
+
+        # Send result to Telegram
+        tg_id = telegram_callback_id
+        if not tg_id:
+            user = db.get(User, str(doc.user_id))
+            if user:
+                tg_id = user.telegram_id
+
+        if tg_id:
+            try:
+                from app.telegram.utils import send_document_result
+                run_async(send_document_result(tg_id, doc))
+            except Exception as e:
+                logger.warning("Failed to send document result to Telegram: %s", e)
 
 
 @celery_app.task(name="app.tasks.ai_tasks.generate_family_menu_task", queue="ai_tasks")
@@ -209,7 +269,6 @@ def generate_family_menu_task(family_id: str):
     from app.models.family import Family
     from app.models.family_menu import FamilyMenu
     from app.services.ai_engine import AIEngine
-    from datetime import date
 
     sync_url = settings.DATABASE_URL.replace("+asyncpg", "+psycopg2")
     engine = sync_create(sync_url)
@@ -244,7 +303,11 @@ def generate_family_menu_task(family_id: str):
             })
 
         engine_ai = AIEngine()
-        result = asyncio.run(engine_ai.generate_family_menu(members_data))
+        try:
+            result = asyncio.run(engine_ai.generate_family_menu(members_data))
+        except Exception as e:
+            logger.error("Family menu generation failed for %s: %s", family_id, e)
+            return
 
         if result:
             # Remove existing menu for this week
@@ -268,6 +331,8 @@ def generate_family_menu_task(family_id: str):
             db.add(menu)
             db.commit()
 
+            logger.info("Family menu generated for %s", family_id)
+
 
 @celery_app.task(name="app.tasks.ai_tasks.generate_all_family_menus")
 def generate_all_family_menus():
@@ -284,3 +349,4 @@ def generate_all_family_menus():
         families = db.execute(select(Family)).scalars().all()
         for family in families:
             generate_family_menu_task.delay(str(family.id))
+        logger.info("Scheduled menu generation for %d families", len(families))

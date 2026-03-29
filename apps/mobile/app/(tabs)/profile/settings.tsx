@@ -7,11 +7,16 @@ import { useRouter } from "expo-router";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/services/api";
 import { useAuthStore } from "@/store/authStore";
+import { useTheme, useThemeStore, ThemeMode } from "@/store/themeStore";
 
 // ---- Section Header ----
 function SectionHeader({ title }: { title: string }) {
+  const { colors } = useTheme();
   return (
-    <Text className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-1 mb-2 mt-5">
+    <Text
+      className="text-xs font-semibold uppercase tracking-wider px-1 mb-2 mt-5"
+      style={{ color: colors.textMuted }}
+    >
       {title}
     </Text>
   );
@@ -19,11 +24,7 @@ function SectionHeader({ title }: { title: string }) {
 
 // ---- Row Item ----
 function SettingsRow({
-  icon,
-  label,
-  value,
-  onPress,
-  danger,
+  icon, label, value, onPress, danger,
 }: {
   icon: string;
   label: string;
@@ -31,47 +32,93 @@ function SettingsRow({
   onPress?: () => void;
   danger?: boolean;
 }) {
+  const { colors } = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
       disabled={!onPress}
       activeOpacity={onPress ? 0.7 : 1}
-      className="flex-row items-center py-3.5 px-4 bg-white border-b border-gray-50"
+      className="flex-row items-center py-3.5 px-4"
+      style={{ backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.borderLight }}
     >
       <Text className="text-base mr-3">{icon}</Text>
-      <Text
-        className={`flex-1 text-base ${danger ? "text-red-500" : "text-gray-800"}`}
-      >
+      <Text className="flex-1 text-base" style={{ color: danger ? colors.danger : colors.text }}>
         {label}
       </Text>
-      {value && <Text className="text-sm text-gray-400 mr-2">{value}</Text>}
-      {onPress && <Text className="text-gray-300">›</Text>}
+      {value && (
+        <Text className="text-sm mr-2" style={{ color: colors.textMuted }}>
+          {value}
+        </Text>
+      )}
+      {onPress && <Text style={{ color: colors.textMuted }}>›</Text>}
     </TouchableOpacity>
   );
 }
 
 // ---- Toggle Row ----
 function ToggleRow({
-  icon,
-  label,
-  value,
-  onToggle,
+  icon, label, value, onToggle,
 }: {
   icon: string;
   label: string;
   value: boolean;
   onToggle: (v: boolean) => void;
 }) {
+  const { colors } = useTheme();
   return (
-    <View className="flex-row items-center py-3 px-4 bg-white border-b border-gray-50">
+    <View
+      className="flex-row items-center py-3 px-4"
+      style={{ backgroundColor: colors.bgCard, borderBottomWidth: 1, borderBottomColor: colors.borderLight }}
+    >
       <Text className="text-base mr-3">{icon}</Text>
-      <Text className="flex-1 text-base text-gray-800">{label}</Text>
+      <Text className="flex-1 text-base" style={{ color: colors.text }}>{label}</Text>
       <Switch
         value={value}
         onValueChange={onToggle}
-        trackColor={{ false: "#e5e7eb", true: "#93c5fd" }}
-        thumbColor={value ? "#3b82f6" : "#f4f3f4"}
+        trackColor={{ false: colors.border, true: "#93c5fd" }}
+        thumbColor={value ? colors.primary : "#f4f3f4"}
       />
+    </View>
+  );
+}
+
+// ---- Theme Selector ----
+function ThemeSelector() {
+  const { colors, isDark } = useTheme();
+  const { theme, setTheme } = useThemeStore();
+
+  const options: { key: ThemeMode; label: string; icon: string }[] = [
+    { key: "light", label: "Світла", icon: "☀️" },
+    { key: "dark", label: "Темна", icon: "🌙" },
+    { key: "system", label: "Системна", icon: "📱" },
+  ];
+
+  return (
+    <View
+      className="flex-row items-center py-3 px-4"
+      style={{ backgroundColor: colors.bgCard }}
+    >
+      <Text className="text-base mr-3">🎨</Text>
+      <Text className="flex-1 text-base" style={{ color: colors.text }}>Тема</Text>
+      <View className="flex-row rounded-lg overflow-hidden" style={{ borderWidth: 1, borderColor: colors.border }}>
+        {options.map((opt) => (
+          <TouchableOpacity
+            key={opt.key}
+            onPress={() => setTheme(opt.key)}
+            className="px-3 py-1.5"
+            style={{
+              backgroundColor: theme === opt.key ? colors.primary : "transparent",
+            }}
+          >
+            <Text
+              className="text-xs font-medium"
+              style={{ color: theme === opt.key ? "#ffffff" : colors.textSecondary }}
+            >
+              {opt.icon} {opt.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </View>
   );
 }
@@ -80,6 +127,7 @@ export default function Settings() {
   const router = useRouter();
   const { user, logout, loadUser } = useAuthStore();
   const queryClient = useQueryClient();
+  const { colors } = useTheme();
 
   const { data: prefs } = useQuery({
     queryKey: ["user-prefs"],
@@ -143,19 +191,25 @@ export default function Settings() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
       <ScrollView className="flex-1">
         {/* Header */}
         <View className="flex-row items-center px-4 pt-4 pb-2">
           <TouchableOpacity onPress={() => router.back()} className="mr-3 py-1">
-            <Text className="text-blue-500 text-base font-medium">← Назад</Text>
+            <Text className="text-base font-medium" style={{ color: colors.primary }}>← Назад</Text>
           </TouchableOpacity>
-          <Text className="text-xl font-bold text-gray-900">Налаштування</Text>
+          <Text className="text-xl font-bold" style={{ color: colors.text }}>Налаштування</Text>
+        </View>
+
+        {/* Appearance */}
+        <SectionHeader title="Зовнішній вигляд" />
+        <View className="rounded-2xl overflow-hidden mx-4" style={{ borderWidth: 1, borderColor: colors.border }}>
+          <ThemeSelector />
         </View>
 
         {/* Account */}
         <SectionHeader title="Акаунт" />
-        <View className="rounded-2xl overflow-hidden mx-4 border border-gray-100">
+        <View className="rounded-2xl overflow-hidden mx-4" style={{ borderWidth: 1, borderColor: colors.border }}>
           <SettingsRow
             icon="👤"
             label="Редагувати профіль"
@@ -190,7 +244,7 @@ export default function Settings() {
 
         {/* Notifications */}
         <SectionHeader title="Сповіщення" />
-        <View className="rounded-2xl overflow-hidden mx-4 border border-gray-100">
+        <View className="rounded-2xl overflow-hidden mx-4" style={{ borderWidth: 1, borderColor: colors.border }}>
           <ToggleRow
             icon="🔔"
             label="Сповіщення"
@@ -219,7 +273,7 @@ export default function Settings() {
 
         {/* Schedule */}
         <SectionHeader title="Розклад" />
-        <View className="rounded-2xl overflow-hidden mx-4 border border-gray-100">
+        <View className="rounded-2xl overflow-hidden mx-4" style={{ borderWidth: 1, borderColor: colors.border }}>
           <SettingsRow
             icon="🌅"
             label="Ранкове опитування"
@@ -241,7 +295,7 @@ export default function Settings() {
 
         {/* Integrations */}
         <SectionHeader title="Інтеграції" />
-        <View className="rounded-2xl overflow-hidden mx-4 border border-gray-100">
+        <View className="rounded-2xl overflow-hidden mx-4" style={{ borderWidth: 1, borderColor: colors.border }}>
           <SettingsRow
             icon="📱"
             label="Telegram"
@@ -252,7 +306,7 @@ export default function Settings() {
 
         {/* Data & Privacy */}
         <SectionHeader title="Дані та приватність" />
-        <View className="rounded-2xl overflow-hidden mx-4 border border-gray-100">
+        <View className="rounded-2xl overflow-hidden mx-4" style={{ borderWidth: 1, borderColor: colors.border }}>
           <SettingsRow
             icon="📦"
             label="Експорт даних"
@@ -268,7 +322,7 @@ export default function Settings() {
 
         {/* About */}
         <SectionHeader title="Про додаток" />
-        <View className="rounded-2xl overflow-hidden mx-4 border border-gray-100">
+        <View className="rounded-2xl overflow-hidden mx-4" style={{ borderWidth: 1, borderColor: colors.border }}>
           <SettingsRow icon="ℹ️" label="Версія" value="1.0.0" />
           <SettingsRow icon="📄" label="Умови використання" onPress={() => {}} />
           <SettingsRow icon="🔒" label="Політика приватності" onPress={() => {}} />
@@ -277,11 +331,14 @@ export default function Settings() {
         {/* Logout */}
         <View className="px-4 mt-6 mb-8">
           <TouchableOpacity
-            className="bg-white rounded-2xl py-4 items-center border border-red-100"
+            className="rounded-2xl py-4 items-center"
+            style={{ backgroundColor: colors.bgCard, borderWidth: 1, borderColor: colors.danger + "30" }}
             onPress={handleLogout}
             activeOpacity={0.7}
           >
-            <Text className="text-red-400 font-semibold text-base">Вийти з акаунту</Text>
+            <Text className="font-semibold text-base" style={{ color: colors.danger }}>
+              Вийти з акаунту
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

@@ -1,11 +1,16 @@
 import { useEffect, useRef } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
+import { PersistQueryClientProvider } from "@tanstack/react-query-persist-client";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import * as Notifications from "expo-notifications";
 import { useAuthStore } from "@/store/authStore";
 import { registerForPushNotifications } from "@/services/notifications";
+import { asyncStoragePersister } from "@/services/queryPersister";
+import { useColorScheme } from "react-native";
+import { ThemeProvider, useThemeStore, useTheme } from "@/store/themeStore";
+import { ErrorBoundary, NetworkBanner } from "@/components/ui";
 import "../global.css";
 
 const queryClient = new QueryClient({
@@ -13,11 +18,13 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       staleTime: 30_000,
+      // Keep data in cache for 24 hours for offline access
+      gcTime: 1000 * 60 * 60 * 24,
     },
   },
 });
 
-export default function RootLayout() {
+function AppContent() {
   const { loadUser, isAuthenticated } = useAuthStore();
   const notificationListener = useRef<Notifications.Subscription>();
   const responseListener = useRef<Notifications.Subscription>();
@@ -58,15 +65,37 @@ export default function RootLayout() {
     };
   }, [isAuthenticated]);
 
+  const { theme } = useThemeStore();
+  const systemScheme = useColorScheme();
+  const isDark = theme === "dark" || (theme === "system" && systemScheme === "dark");
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <QueryClientProvider client={queryClient}>
-        <StatusBar style="dark" />
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{
+          persister: asyncStoragePersister,
+          maxAge: 1000 * 60 * 60 * 24, // 24 hours
+          buster: "v1",
+        }}
+      >
+        <StatusBar style={isDark ? "light" : "dark"} />
+        <NetworkBanner />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
         </Stack>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </GestureHandlerRootView>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AppContent />
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }

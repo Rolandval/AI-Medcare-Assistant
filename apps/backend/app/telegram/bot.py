@@ -32,10 +32,11 @@ def get_dispatcher():
 
 
 def _register_handlers(dp):
-    from app.telegram.handlers import commands, surveys, media
+    from app.telegram.handlers import commands, surveys, media, metrics
     dp.include_router(commands.router)
     dp.include_router(surveys.router)
-    dp.include_router(media.router)
+    dp.include_router(metrics.router)
+    dp.include_router(media.router)  # media last — catches all photos/documents
 
 
 async def setup_webhook():
