@@ -140,7 +140,7 @@ def generate_round_for_user(user_id: str, round_type: str):
                 round_type=round_type,
                 title=card_data["title"],
                 body=card_data["body"],
-                metadata=card_data.get("metadata", {}),
+                card_metadata=card_data.get("metadata", {}),
                 action_type=card_data.get("action_type"),
                 expires_at=card_data.get("expires_at"),
             )

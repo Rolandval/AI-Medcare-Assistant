@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 
 from app.api.deps import DB, CurrentUser
 from app.core.security import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
+from app.core.middleware import limiter
 from app.models.user import User
 from app.models.health_profile import HealthProfile
 from app.schemas.auth import RegisterRequest, LoginRequest, TokenResponse, RefreshRequest, UserMeResponse
@@ -16,7 +17,8 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(body: RegisterRequest, db: DB):
+@limiter.limit("5/minute")
+async def register(request: Request, body: RegisterRequest, db: DB):
     # Check email exists
     result = await db.execute(select(User).where(User.email == body.email))
     if result.scalar_one_or_none():
@@ -43,8 +45,9 @@ async def register(body: RegisterRequest, db: DB):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(body: LoginRequest, db: DB, request: Request):
-    logger.warning(f"LOGIN ATTEMPT from {request.client.host}: email={body.email}")
+@limiter.limit("10/minute")
+async def login(request: Request, body: LoginRequest, db: DB):
+    logger.info("Login attempt from %s: email=%s", request.client.host, body.email)
     result = await db.execute(select(User).where(User.email == body.email, User.is_active == True))
     user = result.scalar_one_or_none()
 
@@ -58,7 +61,8 @@ async def login(body: LoginRequest, db: DB, request: Request):
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh(body: RefreshRequest, db: DB):
+@limiter.limit("20/minute")
+async def refresh(request: Request, body: RefreshRequest, db: DB):
     payload = decode_token(body.refresh_token)
     if not payload or payload.get("type") != "refresh":
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")

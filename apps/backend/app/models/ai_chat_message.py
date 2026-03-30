@@ -28,7 +28,7 @@ class AIChatMessage(UUIDMixin, TimestampMixin, Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
 
     # Optional structured data (e.g., suggested actions, referenced cards)
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True, default=dict)
+    msg_metadata: Mapped[Optional[dict]] = mapped_column("metadata", JSONB, nullable=True, default=dict)
 
     # Relation
     user: Mapped["User"] = relationship("User", back_populates="chat_messages")

@@ -51,15 +51,36 @@ class User(UUIDMixin, TimestampMixin, Base):
     # Relations
     family: Mapped[Optional["Family"]] = relationship("Family", back_populates="members")
     health_profile: Mapped[Optional["HealthProfile"]] = relationship(
-        "HealthProfile", back_populates="user", uselist=False, lazy="selectin"
+        "HealthProfile", back_populates="user", uselist=False, lazy="selectin",
+        cascade="all, delete-orphan", passive_deletes=True,
     )
-    health_metrics: Mapped[List["HealthMetric"]] = relationship("HealthMetric", back_populates="user")
-    daily_surveys: Mapped[List["DailySurvey"]] = relationship("DailySurvey", back_populates="user")
-    medical_documents: Mapped[List["MedicalDocument"]] = relationship("MedicalDocument", back_populates="user")
-    meals: Mapped[List["Meal"]] = relationship("Meal", back_populates="user")
-    ai_recommendations: Mapped[List["AIRecommendation"]] = relationship("AIRecommendation", back_populates="user")
-    medication_reminders: Mapped[List["MedicationReminder"]] = relationship("MedicationReminder", back_populates="user")
-    ai_cards: Mapped[List["AICard"]] = relationship("AICard", back_populates="user")
-    chat_messages: Mapped[List["AIChatMessage"]] = relationship("AIChatMessage", back_populates="user")
-    streaks: Mapped[List["UserStreak"]] = relationship("UserStreak", back_populates="user")
-    achievements: Mapped[List["UserAchievement"]] = relationship("UserAchievement", back_populates="user")
+    health_metrics: Mapped[List["HealthMetric"]] = relationship(
+        "HealthMetric", back_populates="user", cascade="all, delete-orphan", passive_deletes=True,
+    )
+    daily_surveys: Mapped[List["DailySurvey"]] = relationship(
+        "DailySurvey", back_populates="user", cascade="all, delete-orphan", passive_deletes=True,
+    )
+    medical_documents: Mapped[List["MedicalDocument"]] = relationship(
+        "MedicalDocument", back_populates="user", cascade="all, delete-orphan", passive_deletes=True,
+    )
+    meals: Mapped[List["Meal"]] = relationship(
+        "Meal", back_populates="user", cascade="all, delete-orphan", passive_deletes=True,
+    )
+    ai_recommendations: Mapped[List["AIRecommendation"]] = relationship(
+        "AIRecommendation", back_populates="user", cascade="all, delete-orphan", passive_deletes=True,
+    )
+    medication_reminders: Mapped[List["MedicationReminder"]] = relationship(
+        "MedicationReminder", back_populates="user", cascade="all, delete-orphan", passive_deletes=True,
+    )
+    ai_cards: Mapped[List["AICard"]] = relationship(
+        "AICard", back_populates="user", cascade="all, delete-orphan", passive_deletes=True,
+    )
+    chat_messages: Mapped[List["AIChatMessage"]] = relationship(
+        "AIChatMessage", back_populates="user", cascade="all, delete-orphan", passive_deletes=True,
+    )
+    streaks: Mapped[List["UserStreak"]] = relationship(
+        "UserStreak", back_populates="user", cascade="all, delete-orphan", passive_deletes=True,
+    )
+    achievements: Mapped[List["UserAchievement"]] = relationship(
+        "UserAchievement", back_populates="user", cascade="all, delete-orphan", passive_deletes=True,
+    )

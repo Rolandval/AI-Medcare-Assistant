@@ -111,7 +111,7 @@ async def get_feed(
             round_type=card.round_type,
             title=card.title,
             body=card.body,
-            metadata=card.metadata,
+            metadata=card.card_metadata,
             action_type=card.action_type,
             status=card.status,
             created_at=card.created_at,
@@ -151,7 +151,7 @@ async def act_on_card(
         card.status = "acted"
         card.acted_at = now
         # Save survey data in card metadata
-        card.metadata = {**(card.metadata or {}), "response": body.data}
+        card.card_metadata = {**(card.card_metadata or {}), "response": body.data}
         # Also create a daily survey from embedded data
         if body.data:
             await _save_embedded_survey(db, current_user.id, body.data)

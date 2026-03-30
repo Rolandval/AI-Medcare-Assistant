@@ -1,0 +1,119 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+
+jobs:
+  # ---- Backend ----
+  backend-lint:
+    name: Backend Lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - run: pip install ruff
+      - run: ruff check .
+      - run: ruff format --check .
+
+  backend-test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: medcare
+          POSTGRES_PASSWORD: medcare_secret
+          POSTGRES_DB: medcare_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd="pg_isready -U medcare"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - run: pip install -r requirements.txt
+      - run: pip install ruff
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://medcare:medcare_secret@localhost:5433/medcare_test
+          REDIS_URL: redis://localhost:6379/0
+          JWT_SECRET_KEY: ci-test-secret-key
+          ENVIRONMENT: test
+          DEBUG: "true"
+        run: python -m pytest tests/ -v --tb=short
+
+  # ---- Mobile ----
+  mobile-lint:
+    name: Mobile Lint & Typecheck
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npx expo lint 2>/dev/null || true
+
+  # ---- Docker Build Check ----
+  docker-build:
+    name: Docker Build Validation
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build backend image
+        run: |
+          if [ -f apps/backend/Dockerfile ]; then
+            docker build -t medcare-backend apps/backend/
+          else
+            echo "No Dockerfile found — skipping"
+          fi

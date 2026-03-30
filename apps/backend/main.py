@@ -6,9 +6,13 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.core.config import settings
 from app.core.database import engine, Base
+from app.core.middleware import limiter, SecurityHeadersMiddleware
 from app.api.v1.router import api_router
 
 # ---- Structured Logging ----
@@ -60,13 +64,26 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
+# ---- Rate Limiter ----
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# ---- Security Headers ----
+app.add_middleware(SecurityHeadersMiddleware)
+
+# ---- CORS — use configured origins in prod, wildcard in dev ----
+_cors_origins = ["*"] if settings.DEBUG else settings.CORS_ORIGINS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type", "Accept"],
 )
+
+# ---- Trusted Hosts (production only) ----
+if not settings.DEBUG:
+    app.add_middleware(TrustedHostMiddleware, allowed_hosts=settings.CORS_ORIGINS)
 
 app.include_router(api_router, prefix="/api/v1")
 

@@ -35,7 +35,7 @@ class AICard(UUIDMixin, TimestampMixin, Base):
     body: Mapped[str] = mapped_column(Text, nullable=False)
 
     # Structured data (suggestions, options, chart data, etc.)
-    metadata: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True, default=dict)
+    card_metadata: Mapped[Optional[dict]] = mapped_column("metadata", JSONB, nullable=True, default=dict)
     # Examples:
     # challenge: { "deadline": "15:00", "streak": 5 }
     # meal_suggestion: { "suggestions": [{"name": "Омлет", "protein_g": 25, "calories": 300}] }
